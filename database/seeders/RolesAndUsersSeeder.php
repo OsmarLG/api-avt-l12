@@ -13,42 +13,46 @@ class RolesAndUsersSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpia cache de permisos
+        /**
+         * =====================================
+         * Reset cache de permisos (Spatie)
+         * =====================================
+         */
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         /**
-         * ======================
+         * =====================================
          * Permisos
-         * ======================
+         * =====================================
          */
         $permissions = [
-            // users
+            // Users
             'users.view',
             'users.create',
             'users.update',
             'users.delete',
 
-            // roles & permissions
+            // Roles & Permissions
             'roles.manage',
             'permissions.manage',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::updateOrCreate(['name' => $permission]);
         }
 
         /**
-         * ======================
+         * =====================================
          * Roles
-         * ======================
+         * =====================================
          */
-        $master = Role::firstOrCreate(['name' => 'master']);
-        $admin  = Role::firstOrCreate(['name' => 'admin']);
+        $master = Role::updateOrCreate(['name' => 'master']);
+        $admin  = Role::updateOrCreate(['name' => 'admin']);
 
-        // Master → todo
+        // Master → todos los permisos
         $master->syncPermissions(Permission::all());
 
-        // Admin → casi todo menos sistema crítico
+        // Admin → permisos limitados
         $admin->syncPermissions([
             'users.view',
             'users.create',
@@ -56,41 +60,52 @@ class RolesAndUsersSeeder extends Seeder
         ]);
 
         /**
-         * ======================
+         * =====================================
          * Usuarios
-         * ======================
+         * =====================================
          */
 
-        // MASTER (TÚ)
-        $masterUser = User::firstOrCreate(
-            ['email' => 'lieragomezosmaralejandro@gmail.com', 'username' => 'osmarlg'],
+        // ===== MASTER 1 =====
+        $masterUser = User::updateOrCreate(
+            ['email' => 'lieragomezosmaralejandro@gmail.com'],
             [
                 'name' => 'Osmar Liera',
+                'username' => 'osmarlg',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
         $masterUser->syncRoles(['master']);
-        
-        $masterUser2 = User::firstOrCreate(
-            ['email' => 'jeremy.ojeda@hotmail.com', 'username' => 'jeremy'],
+
+        // ===== MASTER 2 =====
+        $masterUser2 = User::updateOrCreate(
+            ['email' => 'jeremy.ojeda@hotmail.com'],
             [
                 'name' => 'Jeremy Ojeda',
+                'username' => 'jeremy',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
         $masterUser2->syncRoles(['master']);
 
-        // ADMIN
-        $adminUser = User::firstOrCreate(
-            ['email' => 'admin@avt.com', 'username' => 'admin'],
+        // ===== ADMIN =====
+        $adminUser = User::updateOrCreate(
+            ['email' => 'admin@avt.com'],
             [
                 'name' => 'Admin User',
+                'username' => 'admin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
         $adminUser->syncRoles(['admin']);
+
+        /**
+         * =====================================
+         * Output consola (opcional)
+         * =====================================
+         */
+        $this->command?->info('Roles, permisos y usuarios creados/actualizados correctamente.');
     }
 }

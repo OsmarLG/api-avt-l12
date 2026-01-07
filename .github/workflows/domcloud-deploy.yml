@@ -1,0 +1,52 @@
+name: Sync on DOM Cloud
+
+'on':
+  workflow_dispatch: {}
+  push:
+    branches:
+      # - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke deployment hook
+        uses: distributhor/workflow-webhook@v3
+        with:
+          webhook_url: https://my.domcloud.co/api/githubdeploy
+          webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+          webhook_auth: ${{ secrets.WEBHOOK_AUTH }}
+          data: >-
+            {"commands":[
+              "set -e",
+
+              "git fetch --all --prune",
+
+              "if git show-ref --verify --quiet refs/remotes/origin/main; then BR=main; elif git show-ref --verify --quiet refs/remotes/origin/master; then BR=master; else BR=main; fi",
+              "echo \"Deploying branch: $BR\"",
+
+              "git reset --hard origin/$BR",
+              "git clean -fd",
+
+              "rm -rf vendor",
+              "rm -rf node_modules",
+
+              "composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader",
+
+              "php artisan migrate:fresh --seed --force",
+
+              "php artisan config:cache",
+              "php artisan route:cache || true",
+              "php artisan view:cache || true",
+              "php artisan event:cache || true",
+
+              "npm ci || npm install",
+              "npm run build",
+
+              "php artisan storage:link || true",
+              "rm -f public/hot || true",
+              "chmod 0750 -R storage bootstrap/cache || true",
+
+              "restart"
+            ]}
