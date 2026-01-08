@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndUsersSeeder extends Seeder
@@ -47,7 +47,7 @@ class RolesAndUsersSeeder extends Seeder
          * =====================================
          */
         $master = Role::updateOrCreate(['name' => 'master']);
-        $admin  = Role::updateOrCreate(['name' => 'admin']);
+        $admin = Role::updateOrCreate(['name' => 'admin']);
 
         // Master → todos los permisos
         $master->syncPermissions(Permission::all());

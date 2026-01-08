@@ -12,16 +12,18 @@ use App\Models\User;
 use App\Services\Api\UserService;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
     public function __construct(
         private readonly UserService $service
-    ) {}
+    ) {
+    }
 
     /**
      * Get a listing of the resource.
-     * 
+     *
      * Get a paginated list of users with optional filters and sorting.
      */
     public function index(IndexUsersRequest $request)
@@ -37,12 +39,12 @@ class UserController extends Controller
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
             ],
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
      * Get a select list of users.
-     * 
+     *
      * Provides a list of users formatted for select inputs, with optional search and limit.
      */
     public function select(Request $request)
@@ -52,58 +54,74 @@ class UserController extends Controller
 
         $items = $this->service->selectList($search ?: null, $limit);
 
-        return ApiResponse::ok(\App\Http\Resources\Api\UserSelectResource::collection($items));
+        return ApiResponse::ok(UserSelectResource::collection($items));
     }
 
     /**
      * Display the specified resource.
-     * 
+     *
      * Get detailed information about a specific user by ID.
      */
     public function show(User $user)
     {
-        return ApiResponse::ok(new UserResource($this->service->find($user)));
+        return ApiResponse::ok(new UserResource($this->service->find($user)), Response::HTTP_OK);
     }
 
     /**
      * Store a newly created resource in storage.
-     * 
+     *
      * Create a new user with the provided data.
      */
     public function store(StoreUserRequest $request)
     {
         $user = $this->service->create($request->validated());
 
-        return ApiResponse::ok(new UserResource($user), 'Usuario creado', 201);
+        return ApiResponse::ok(new UserResource($user), 'Usuario creado', Response::HTTP_CREATED);
+    }
+
+    /**
+     * Activate / deactivate a user.
+     *
+     * Updates the user's active status.
+     */
+    public function setActive(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $user = $this->service->setActive($user, (bool) $data['is_active']);
+
+        return ApiResponse::ok(new UserResource($user), 'Estatus actualizado');
     }
 
     /**
      * Update the specified resource in storage.
-     * 
+     *
      * Update an existing user's information.
      */
     public function update(UpdateUserRequest $request, User $user)
     {
         $user = $this->service->update($user, $request->validated());
 
-        return ApiResponse::ok(new UserResource($user), 'Usuario actualizado');
+        return ApiResponse::ok(new UserResource($user), 'Usuario actualizado', Response::HTTP_OK);
     }
 
     /**
      * Remove the specified resource from storage.
-     * 
+     *
      * Delete a user by ID.
      */
     public function destroy(User $user)
     {
         $this->service->delete($user);
 
-        return ApiResponse::ok(null, 'Usuario eliminado');
+        return ApiResponse::ok(null, 'Usuario eliminado', Response::HTTP_NO_CONTENT);
     }
 
     /**
      * Get options for select inputs.
-     * 
+     *
      * Alias for the select method to provide options for select inputs.
      */
     public function options(Request $request)

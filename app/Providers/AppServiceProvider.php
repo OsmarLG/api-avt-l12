@@ -2,12 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-
-
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,14 +23,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-        //Para Scramble
+        // Para Scramble
         Scramble::afterOpenApiGenerated(function ($openApi) {
             $openApi->secure(
                 SecurityScheme::http('bearer')
             );
         });
 
-        //Para Scramble Production
+        // Para Scramble Production
         Gate::define('viewApiDocs', function () {
             return true;
         });

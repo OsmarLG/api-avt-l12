@@ -37,16 +37,22 @@ class UserService
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
         ]);
+    }
+
+    public function setActive(User $user, bool $isActive): User
+    {
+        $user->is_active = $isActive;
+        $user->save();
+
+        return $user->refresh();
     }
 
     public function update(User $user, array $data): User
     {
         if (array_key_exists('password', $data)) {
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
+            if (empty($data['password'])) {
                 unset($data['password']);
             }
         }

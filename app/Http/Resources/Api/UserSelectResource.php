@@ -11,11 +11,11 @@ class UserSelectResource extends JsonResource
     {
         $label = $this->name;
 
-        if (!empty($this->username)) {
+        if (! empty($this->username)) {
             $label .= " (@{$this->username})";
         }
 
-        if (!empty($this->email)) {
+        if (! empty($this->email)) {
             $label .= " <{$this->email}>";
         }
 

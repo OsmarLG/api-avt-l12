@@ -8,6 +8,6 @@ Route::get('/', function () {
         'PHP Version' => PHP_VERSION,
         'Laravel Version' => app()->version(),
         'Environment' => config('app.env'),
-        'message' => 'API is running'
+        'message' => 'API is running',
     ]);
 });

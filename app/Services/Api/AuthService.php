@@ -25,6 +25,12 @@ class AuthService
             ]);
         }
 
+        if (!$user->is_active) {
+            throw ValidationException::withMessages([
+                'login' => ['Usuario inactivo. Contacta al administrador.'],
+            ]);
+        }
+
         $token = $user->createToken($deviceName)->plainTextToken;
 
         return [
@@ -64,7 +70,10 @@ class AuthService
             ]);
         }
 
-        $user->password = Hash::make($newPassword);
+        $user->password = $newPassword;
         $user->save();
+
+        // opcional: cerrar sesión en todos los dispositivos
+        // $user->tokens()->delete();
     }
 }
