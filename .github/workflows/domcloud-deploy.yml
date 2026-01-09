@@ -32,7 +32,7 @@ jobs:
               "rm -rf vendor",
               "rm -rf node_modules",
 
-              "composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader",
+              "composer install --no-interaction --prefer-dist --optimize-autoloader",
 
               "php artisan migrate:fresh --seed --force",
 
