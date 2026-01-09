@@ -15,7 +15,6 @@ class PersonFactory extends Factory
         $gender = $sexo === 'masculino' ? 'male' : 'female';
 
         return [
-            // ✅ usar métodos, no propiedades
             'nombres' => $this->faker->firstName($gender),
             'apellido_paterno' => $this->faker->lastName(),
             'apellido_materno' => $this->faker->optional()->lastName(),
@@ -27,14 +26,21 @@ class PersonFactory extends Factory
             'nacionalidad' => $this->faker->randomElement(['mexicana', 'estadounidense']),
             'estado_civil' => $this->faker->randomElement(['soltero', 'casado', 'divorciado', 'viudo', 'union_libre']),
 
-            // ✅ corrige comas en regex: [HM] y [A-Z0-9]
-            'curp' => $this->faker->optional()->unique()->regexify('[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}'),
-            'rfc' => $this->faker->optional()->unique()->regexify('[A-Z]{4}[0-9]{6}[A-Z0-9]{3}'),
+            // ✅ opcionales SIN optional()->unique()->regexify()
+            'curp' => $this->faker->boolean(70)
+                ? $this->faker->unique()->regexify('[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}')
+                : null,
 
-            // ✅ INE: mejor 13 (o el que quieras), pero consistente
-            'ine' => $this->faker->optional()->unique()->numerify('#############'),
+            'rfc' => $this->faker->boolean(70)
+                ? $this->faker->unique()->regexify('[A-Z]{4}[0-9]{6}[A-Z0-9]{3}')
+                : null,
+
+            'ine' => $this->faker->boolean(70)
+                ? $this->faker->unique()->numerify('#############')
+                : null,
 
             'ocupacion_profesion' => $this->faker->jobTitle(),
+
             'pais_nacimiento' => $this->faker->country(),
             'estado_nacimiento' => $this->faker->state(),
             'municipio_nacimiento' => $this->faker->city(),
