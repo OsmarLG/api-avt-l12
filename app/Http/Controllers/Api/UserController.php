@@ -18,8 +18,7 @@ class UserController extends Controller
 {
     public function __construct(
         private readonly UserService $service
-    ) {
-    }
+    ) {}
 
     /**
      * Get a listing of the resource.
@@ -38,7 +37,9 @@ class UserController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
+                'links' => $paginator->linkCollection(),
             ],
+
         ], Response::HTTP_OK);
     }
 
