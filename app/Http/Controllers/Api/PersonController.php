@@ -18,8 +18,7 @@ class PersonController extends Controller
 {
     public function __construct(
         private readonly PersonService $service
-    ) {
-    }
+    ) {}
 
     /**
      * Get a listing of the resource.
@@ -38,6 +37,7 @@ class PersonController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
+                'links' => $paginator->linkCollection(),
             ],
         ], 'OK', Response::HTTP_OK);
     }
