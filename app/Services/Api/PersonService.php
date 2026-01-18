@@ -133,10 +133,13 @@ class PersonService
     {
         if (!empty($filters['search'])) {
             $s = trim($filters['search']);
-            $query->where(function (Builder $q) use ($s) {
-                $q->where('nombres', 'like', "%{$s}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$s}%")
-                    ->orWhere('apellido_materno', 'like', "%{$s}%")
+            $terms = preg_split('/\s+/', $s);
+            $query->where(function (Builder $q) use ($s, $terms) {
+                $q->where(function (Builder $name) use ($terms) {
+                    foreach ($terms as $term) {
+                        $name->where('fullname', 'like', "%{$term}%");
+                    }
+                })
                     ->orWhere('curp', 'like', "%{$s}%")
                     ->orWhere('rfc', 'like', "%{$s}%")
                     ->orWhere('ine', 'like', "%{$s}%");
