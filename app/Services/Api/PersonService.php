@@ -10,6 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PersonService
 {
@@ -243,6 +244,52 @@ class PersonService
         $toDelete = $existing->keys()->diff($keepIds);
         if ($toDelete->isNotEmpty()) {
             Reference::query()->whereIn('id', $toDelete)->delete();
+        }
+    }
+
+    public function createWithFiles(array $data, array $files, ?int $userId): Person
+    {
+        $uploadedPaths = [];
+        $disk = 'public';
+
+        try {
+            return DB::transaction(function () use ($data, $files, $userId, &$uploadedPaths, $disk) {
+                // 1. Create Person
+                $person = $this->create($data);
+
+                // 2. Upload Files
+                $fileService = app(PersonFileService::class);
+
+                foreach ($files as $fileData) {
+                    $uploadedFile = $fileData['file'];
+
+                    $meta = [
+                        'title' => $fileData['title'] ?? null,
+                        'visibility' => $fileData['visibility'] ?? 'private',
+                        'disk' => $disk,
+                    ];
+
+                    $fileRecord = $fileService->upload($person, $uploadedFile, $meta, $userId);
+
+                    if ($fileRecord->path) {
+                        $uploadedPaths[] = $fileRecord->path;
+                    }
+                }
+
+                return $person->load(['phones', 'emails', 'references', 'files']);
+            });
+
+        } catch (\Throwable $e) {
+            // Manual Rollback of Physical Files
+            if (!empty($uploadedPaths)) {
+                foreach ($uploadedPaths as $path) {
+                    // if (Storage::disk($disk)->exists($path)) {
+                    Storage::disk($disk)->delete($path);
+                    // }
+                }
+            }
+
+            throw $e;
         }
     }
 }

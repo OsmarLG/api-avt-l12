@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\People\IndexPeopleRequest;
 use App\Http\Requests\Api\People\StorePersonRequest;
+use App\Http\Requests\Api\People\StorePersonWithFilesRequest;
 use App\Http\Requests\Api\People\UpdatePersonRequest;
 use App\Http\Resources\Api\PersonResource;
 use App\Http\Resources\Api\PersonSelectResource;
@@ -124,5 +125,25 @@ class PersonController extends Controller
     public function options(Request $request)
     {
         return $this->select($request);
+    }
+
+    /**
+     * Create a new person with files attached.
+     */
+    public function storeWithFiles(StorePersonWithFilesRequest $request)
+    {
+        $data = $request->validated();
+
+        // Separate files from other data
+        $files = $data['files'] ?? [];
+        unset($data['files']);
+
+        $person = $this->service->createWithFiles($data, $files, $request->user()?->id);
+
+        return ApiResponse::ok(
+            new PersonResource($person),
+            'Persona creada con archivos',
+            Response::HTTP_CREATED
+        );
     }
 }

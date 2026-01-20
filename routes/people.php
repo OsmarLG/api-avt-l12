@@ -12,6 +12,7 @@ Route::prefix('people')->group(function () {
     Route::get('/', [PersonController::class, 'index']);
     Route::get('/{person}', [PersonController::class, 'show']);
     Route::post('/', [PersonController::class, 'store']);
+    Route::post('/with-files', [PersonController::class, 'storeWithFiles']);
     Route::put('/{person}', [PersonController::class, 'update']);
     Route::delete('/{person}', [PersonController::class, 'destroy']);
 
