@@ -34,7 +34,7 @@ jobs:
 
               "composer install --no-interaction --prefer-dist --optimize-autoloader",
 
-              "php artisan migrate:fresh --seed --force",
+              "php artisan migrate",
 
               "php artisan config:cache",
               "php artisan route:cache || true",
