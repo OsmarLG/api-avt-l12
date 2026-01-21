@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\PersonController;
 use App\Http\Controllers\Api\PersonFileController;
 use App\Http\Controllers\Api\PersonContactController;
+use App\Http\Controllers\PersonReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('people')->group(function () {
@@ -15,6 +16,7 @@ Route::prefix('people')->group(function () {
     Route::post('/with-files', [PersonController::class, 'storeWithFiles']);
     Route::put('/{person}', [PersonController::class, 'update']);
     Route::delete('/{person}', [PersonController::class, 'destroy']);
+    Route::get('/{person}/report', [PersonReportController::class, 'show']);
 
     Route::prefix('{person}')->group(function () {
         // files
