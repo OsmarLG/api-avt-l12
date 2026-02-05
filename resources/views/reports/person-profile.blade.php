@@ -11,11 +11,19 @@
             line-height: 1.6;
         }
 
+        @page {
+            margin: 100px 25px 60px 25px;
+        }
+
         .header {
+            position: fixed;
+            top: -60px;
+            left: 0px;
+            right: 0px;
+            height: 60px;
             text-align: center;
             border-bottom: 2px solid #555;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 5px;
         }
 
         .header h1 {
@@ -63,14 +71,31 @@
 
         .footer {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 12px;
-            color: #999;
+            bottom: -40px;
+            left: 0px;
+            right: 0px;
+            height: 30px;
+            font-size: 10px;
+            color: #777;
             border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding-top: 5px;
+        }
+
+        .footer-content {
+            width: 100%;
+            display: table;
+        }
+
+        .footer-left {
+            display: table-cell;
+            text-align: left;
+            width: 50%;
+        }
+
+        .footer-right {
+            display: table-cell;
+            text-align: right;
+            width: 50%;
         }
 
         .grid-container {
@@ -281,8 +306,27 @@
     </div>
 
     <div class="footer">
-        Este documento es un reporte generado automáticamente por el sistema.
+        <div class="footer-content">
+            <div class="footer-left">
+                REF DOC: <strong>{{ $referenceId }}</strong>
+            </div>
+            <div class="footer-right">
+                <!-- Page numbers will be rendered here by script -->
+            </div>
+        </div>
     </div>
+
+    <script type="text/php">
+        if (isset($pdf)) {
+            $text = "Página {PAGE_NUM} de {PAGE_COUNT}";
+            $size = 10;
+            $font = $fontMetrics->getFont("Helvetica");
+            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
+            $x = ($pdf->get_width() - $width) - 30; // Aligned to right with margin
+            $y = $pdf->get_height() - 35;
+            $pdf->page_text($x, $y, $text, $font, $size);
+        }
+    </script>
 
 </body>
 

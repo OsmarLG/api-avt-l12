@@ -13,8 +13,12 @@ class PersonReportService
     {
         $person->load(['phones', 'emails', 'references', 'files']);
 
-        $pdf = Pdf::loadView('reports.person-profile', ['person' => $person])
-            ->setPaper('a4', 'portrait'); // Estético: A4 Portrait
+        $referenceId = 'REF-PER-' . str_pad($person->id, 6, '0', STR_PAD_LEFT) . '-' . date('Ymd');
+        $pdf = Pdf::loadView('reports.person-profile', [
+            'person' => $person,
+            'referenceId' => $referenceId,
+        ])
+            ->setPaper('a4', 'portrait');
 
         $fileName = 'ficha_' . $person->id . '_' . Str::slug($person->nombres) . '.pdf';
         $path = 'reports/people/' . $fileName;
