@@ -111,7 +111,7 @@
             </tr>
             <tr>
                 <th>Fecha de Nacimiento</th>
-                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->edad }} años)</td>
+                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->fecha_nacimiento?->age }} años)</td>
             </tr>
             <tr>
                 <th>Lugar de Nacimiento</th>
