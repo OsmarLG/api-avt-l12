@@ -12,15 +12,15 @@
         }
 
         @page {
-            margin: 110px 25px 60px 25px;
+            margin: 130px 25px 60px 25px;
         }
 
         .header {
             position: fixed;
-            top: -70px;
+            top: -90px;
             left: 0px;
             right: 0px;
-            height: 70px;
+            height: 90px;
             text-align: center;
             border-bottom: 2px solid #555;
             padding-bottom: 5px;
