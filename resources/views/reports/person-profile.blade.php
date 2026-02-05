@@ -143,11 +143,11 @@
             </tr>
             <tr>
                 <th>Teléfono</th>
-                <td>{{ $person->phones->first()->number }}</td>
+                <td>{{ $person->phones->first()->number ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <th>Celular</th>
-                <td>{{ $person->phones->last()->number }}</td>
+                <td>{{ $person->phones->last()->number ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <th>Otros</th>
@@ -170,7 +170,7 @@
             </tr>
             <tr>
                 <th>Email</th>
-                <td>{{ $person->emails->first()->email }}</td>
+                <td>{{ $person->emails->first()->email ?? 'N/A' }}</td>
             </tr>
         </table>
     </div>
