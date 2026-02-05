@@ -12,7 +12,7 @@
         }
 
         @page {
-            margin: 125px 25px 60px 25px;
+            margin: 110px 25px 60px 25px;
         }
 
         .header {
@@ -32,7 +32,7 @@
         }
 
         .header p {
-            margin: 5px 0 0;
+            margin: 15px 0 0;
             font-size: 14px;
             color: #777;
         }
