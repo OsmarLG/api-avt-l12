@@ -102,6 +102,14 @@
                 <td>{{ $person->nombres }} {{ $person->apellido_paterno }} {{ $person->apellido_materno }}</td>
             </tr>
             <tr>
+                <th>Fecha de Nacimiento</th>
+                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->edad }} años)</td>
+            </tr>
+            <tr>
+                <th>Sexo</th>
+                <td>{{ $person->sexo }}</td>
+            </tr>
+            <tr>
                 <th>Nacionalidad</th>
                 <td>{{ $person->nacionalidad }}</td>
             </tr>
@@ -110,23 +118,57 @@
                 <td>{{ $person->estado_civil }}</td>
             </tr>
             <tr>
-                <th>Fecha de Nacimiento</th>
-                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->fecha_nacimiento?->age }} años)</td>
-            </tr>
-            <tr>
-                <th>Lugar de Nacimiento</th>
-                <td>{{ $person->localidad_nacimiento }}, {{ $person->municipio_nacimiento }},
-                    {{ $person->estado_nacimiento }}, {{ $person->pais_nacimiento }}
-                </td>
-            </tr>
-            <tr>
                 <th>Ocupación o Profesión</th>
                 <td>{{ $person->ocupacion_profesion }}</td>
             </tr>
             <tr>
-                <th>Dirección</th>
-                <td>{{ $person->calle }} {{ $person->numero_exterior }}
-                    {{ $person->numero_interior ? 'Int. ' . $person->numero_interior : '' }}
+                <th>R.F.C.</th>
+                <td>{{ $person->rfc }}</td>
+            </tr>
+            <tr>
+                <th>C.U.R.P.</th>
+                <td>{{ $person->curp }}</td>
+            </tr>
+            <tr>
+                <th>INE</th>
+                <td>{{ $person->ine }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Lugar de Nacimiento -->
+    <div class="section">
+        <div class="section-title">Lugar de Nacimiento</div>
+        <table>
+            <tr>
+                <th>País</th>
+                <td>{{ $person->pais_nacimiento }}</td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>{{ $person->estado_nacimiento }}</td>
+            </tr>
+            <tr>
+                <th>Municipio</th>
+                <td>{{ $person->municipio_nacimiento }}</td>
+            </tr>
+            <tr>
+                <th>Localidad</th>
+                <td>{{ $person->localidad_nacimiento }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Domicilio Actual -->
+    <div class="section">
+        <div class="section-title">Domicilio Actual</div>
+        <table>
+            <tr>
+                <th>Calle y Números</th>
+                <td>
+                    {{ $person->calle }}
+                    @if($person->numero_exterior) Ext. {{ $person->numero_exterior }} @endif
+                    @if($person->numero_interior) Int. {{ $person->numero_interior }} @endif
                 </td>
             </tr>
             <tr>
@@ -134,77 +176,24 @@
                 <td>{{ $person->colonia }}</td>
             </tr>
             <tr>
-                <th>Ciudad</th>
-                <td>{{ $person->ciudad_domicilio }}</td>
+                <th>Código Postal</th>
+                <td>{{ $person->codigo_postal }}</td>
+            </tr>
+            <tr>
+                <th>Localidad</th>
+                <td>{{ $person->localidad_domicilio }}</td>
+            </tr>
+            <tr>
+                <th>Municipio</th>
+                <td>{{ $person->municipio_domicilio }}</td>
             </tr>
             <tr>
                 <th>Estado</th>
                 <td>{{ $person->estado_domicilio }}</td>
             </tr>
             <tr>
-                <th>Teléfono</th>
-                <td>{{ $person->phones->first()->number ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Celular</th>
-                <td>{{ $person->phones->last()->number ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Otros</th>
-            </tr>
-            <tr>
-                <th>R.F.C.</th>
-                <td>{{ $person->rfc }}</td>
-            </tr>
-            <tr>
-                <th>CURP</th>
-                <td>{{ $person->curp }}</td>
-            </tr>
-            <tr>
-                <th>INE</th>
-                <td>{{ $person->ine }}</td>
-            </tr>
-            <tr>
-                <th>Email</th>
-                <td>{{ $person->emails->first()->email ?? 'N/A' }}</td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Lugar de Nacimiento y Domicilio -->
-    <div class="section">
-        <div class="section-title">Ubicación</div>
-        <table>
-            <tr>
-                <th colspan="2" style="background-color: #e9e9e9; text-align: center;">Lugar de Nacimiento</th>
-            </tr>
-            <tr>
-                <th>País / Estado</th>
-                <td>{{ $person->pais_nacimiento }}, {{ $person->estado_nacimiento }}</td>
-            </tr>
-            <tr>
-                <th>Municipio / Localidad</th>
-                <td>{{ $person->municipio_nacimiento }}, {{ $person->localidad_nacimiento }}</td>
-            </tr>
-
-            <tr>
-                <th colspan="2" style="background-color: #e9e9e9; text-align: center;">Domicilio Actual</th>
-            </tr>
-            <tr>
-                <th>Dirección</th>
-                <td>{{ $person->calle }} {{ $person->numero_exterior }}
-                    {{ $person->numero_interior ? 'Int. ' . $person->numero_interior : '' }}
-                </td>
-            </tr>
-            <tr>
-                <th>Colonia / CP</th>
-                <td>{{ $person->colonia }} CP: {{ $person->codigo_postal }}</td>
-            </tr>
-            <tr>
-                <th>Ubicación</th>
-                <td>{{ $person->localidad_domicilio }}, {{ $person->municipio_domicilio }},
-                    {{ $person->estado_domicilio }}, {{ $person->pais_domicilio }}
-                </td>
+                <th>País</th>
+                <td>{{ $person->pais_domicilio }}</td>
             </tr>
         </table>
     </div>
@@ -233,6 +222,9 @@
                     @endforeach
                 </tbody>
             </table>
+        @else
+            <h4>Teléfonos</h4>
+            <p style="font-style: italic; color: #777;">No hay teléfonos registrados.</p>
         @endif
 
         @if($person->emails->isNotEmpty())
@@ -255,13 +247,16 @@
                     @endforeach
                 </tbody>
             </table>
+        @else
+            <h4>Correos Electrónicos</h4>
+            <p style="font-style: italic; color: #777;">No hay correos electrónicos registrados.</p>
         @endif
     </div>
 
     <!-- Referencias -->
-    @if($person->references->isNotEmpty())
-        <div class="section">
-            <div class="section-title">Referencias Personales</div>
+    <div class="section">
+        <div class="section-title">Referencias Personales</div>
+        @if($person->references->isNotEmpty())
             <table>
                 <thead>
                     <tr>
@@ -280,8 +275,10 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
-    @endif
+        @else
+            <p style="font-style: italic; color: #777;">No hay referencias personales registradas.</p>
+        @endif
+    </div>
 
     <div class="footer">
         Este documento es un reporte generado automáticamente por el sistema.
