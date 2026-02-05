@@ -102,22 +102,6 @@
                 <td>{{ $person->nombres }} {{ $person->apellido_paterno }} {{ $person->apellido_materno }}</td>
             </tr>
             <tr>
-                <th>CURP</th>
-                <td>{{ $person->curp }}</td>
-            </tr>
-            <tr>
-                <th>RFC</th>
-                <td>{{ $person->rfc }}</td>
-            </tr>
-            <tr>
-                <th>Fecha de Nacimiento</th>
-                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->edad }} años)</td>
-            </tr>
-            <tr>
-                <th>Sexo</th>
-                <td>{{ $person->sexo }}</td>
-            </tr>
-            <tr>
                 <th>Nacionalidad</th>
                 <td>{{ $person->nacionalidad }}</td>
             </tr>
@@ -126,8 +110,67 @@
                 <td>{{ $person->estado_civil }}</td>
             </tr>
             <tr>
-                <th>Ocupación</th>
+                <th>Fecha de Nacimiento</th>
+                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->edad }} años)</td>
+            </tr>
+            <tr>
+                <th>Lugar de Nacimiento</th>
+                <td>{{ $person->localidad_nacimiento }}, {{ $person->municipio_nacimiento }},
+                    {{ $person->estado_nacimiento }}, {{ $person->pais_nacimiento }}
+                </td>
+            </tr>
+            <tr>
+                <th>Ocupación o Profesión</th>
                 <td>{{ $person->ocupacion_profesion }}</td>
+            </tr>
+            <tr>
+                <th>Dirección</th>
+                <td>{{ $person->calle }} {{ $person->numero_exterior }}
+                    {{ $person->numero_interior ? 'Int. ' . $person->numero_interior : '' }}
+                </td>
+            </tr>
+            <tr>
+                <th>Colonia</th>
+                <td>{{ $person->colonia }}</td>
+            </tr>
+            <tr>
+                <th>Ciudad</th>
+                <td>{{ $person->ciudad_domicilio }}</td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>{{ $person->estado_domicilio }}</td>
+            </tr>
+            <tr>
+                <th>Teléfono</th>
+                <td>{{ $person->phones->first()->number }}</td>
+            </tr>
+            <tr>
+                <th>Celular</th>
+                <td>{{ $person->phones->last()->number }}</td>
+            </tr>
+            <tr>
+                <th>Otros</th>
+            </tr>
+            <tr>
+                <th>R.F.C.</th>
+                <td>{{ $person->rfc }}</td>
+            </tr>
+            <tr>
+                <th>CURP</th>
+                <td>{{ $person->curp }}</td>
+            </tr>
+            <tr>
+                <th>RFC</th>
+                <td>{{ $person->rfc }}</td>
+            </tr>
+            <tr>
+                <th>INE</th>
+                <td>{{ $person->ine }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ $person->emails->first()->email }}</td>
             </tr>
         </table>
     </div>
