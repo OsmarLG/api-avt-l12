@@ -18,7 +18,8 @@ class PersonReportService
             'person' => $person,
             'referenceId' => $referenceId,
         ])
-            ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'portrait')
+            ->setOption(['isPhpEnabled' => true]);
 
         $fileName = 'ficha_' . $person->id . '_' . Str::slug($person->nombres) . '.pdf';
         $path = 'reports/people/' . $fileName;
