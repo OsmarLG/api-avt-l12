@@ -161,10 +161,6 @@
                 <td>{{ $person->curp }}</td>
             </tr>
             <tr>
-                <th>RFC</th>
-                <td>{{ $person->rfc }}</td>
-            </tr>
-            <tr>
                 <th>INE</th>
                 <td>{{ $person->ine }}</td>
             </tr>
