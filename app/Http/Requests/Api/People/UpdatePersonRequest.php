@@ -53,7 +53,7 @@ class UpdatePersonRequest extends FormRequest
 
             'phones' => ['nullable', 'array'],
             'phones.*.id' => ['nullable', 'integer', 'exists:phones,id'],
-            'phones.*.number' => ['required', 'string', 'max:255'],
+            'phones.*.number' => ['required', 'max:255'],
             'phones.*.type' => ['required', Rule::in(['celular', 'casa', 'trabajo'])],
 
             'emails' => ['nullable', 'array'],
@@ -64,7 +64,7 @@ class UpdatePersonRequest extends FormRequest
             'references' => ['nullable', 'array'],
             'references.*.id' => ['nullable', 'integer', 'exists:references,id'],
             'references.*.nombres' => ['required', 'string', 'max:255'],
-            'references.*.celular' => ['required', 'string', 'max:255'],
+            'references.*.celular' => ['required', 'max:255'],
             'references.*.parentesco' => ['required', 'string', 'max:255'],
         ];
     }
