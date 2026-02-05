@@ -12,7 +12,7 @@
         }
 
         @page {
-            margin: 110px 25px 60px 25px;
+            margin: 125px 25px 60px 25px;
         }
 
         .header {
