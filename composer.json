@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/telescope": "^5.16",
         "laravel/tinker": "^2.10.1",
+        "matanyadaev/laravel-eloquent-spatial": "^4.6",
         "spatie/laravel-permission": "^6.24"
     },
     "require-dev": {
