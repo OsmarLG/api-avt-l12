@@ -29,7 +29,7 @@ class PredioService
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Predio::query()->with('zona');
+        $query = Predio::query()->load('zone');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -43,14 +43,14 @@ class PredioService
 
     public function find(Predio $predio): Predio
     {
-        return $predio->with('zona');
+        return $predio->load('zone');
     }
 
     public function create(array $data): Predio
     {
         $data = $this->preparePolygonData($data);
 
-        return Predio::create($data)->with('zona');
+        return Predio::create($data)->load('zone');
     }
 
     public function update(Predio $predio, array $data): Predio
@@ -59,7 +59,7 @@ class PredioService
 
         $predio->update($data);
 
-        return $predio->with('zona');
+        return $predio->load('zone');
     }
 
     /**
