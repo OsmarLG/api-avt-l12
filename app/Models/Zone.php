@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Predio;
 
 class Zone extends Model
 {
@@ -11,5 +13,8 @@ class Zone extends Model
         'dueno_nombre',
     ];
 
-    //
+    public function predios(): HasMany
+    {
+        return $this->hasMany(Predio::class);
+    }
 }

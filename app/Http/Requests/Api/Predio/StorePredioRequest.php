@@ -22,7 +22,6 @@ class StorePredioRequest extends FormRequest
             'condicion' => ['nullable', 'string', 'max:50'],
             'tipo_predio' => ['nullable', 'string', 'max:50'],
             'zona_id' => ['nullable', 'exists:zones,id'],
-            'polygon' => ['nullable'],
             'gid' => ['nullable', 'numeric'],
             'activo' => ['nullable', 'string', 'max:255'],
             'vc' => ['nullable', 'numeric'],
@@ -30,6 +29,17 @@ class StorePredioRequest extends FormRequest
             'tasa' => ['nullable', 'numeric'],
             'manzana' => ['nullable', 'string', 'max:255'],
             'area' => ['nullable', 'numeric'],
+
+            // GeoJSON-like
+            'geometry' => ['nullable', 'array'],
+            'geometry.type' => ['required_with:geometry', 'in:Polygon,MultiPolygon'],
+            'geometry.coordinates' => ['required_with:geometry', 'array'],
+
+            // Opcional: si quieres permitir polygon simple como [ [lat,lng], [lat,lng], ... ]
+            'polygon' => ['nullable', 'array'],
+            'polygon.*' => ['array', 'size:2'],
+            'polygon.*.0' => ['numeric'], // lat
+            'polygon.*.1' => ['numeric'], // lng
         ];
     }
 }

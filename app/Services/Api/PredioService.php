@@ -29,7 +29,7 @@ class PredioService
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Predio::query();
+        $query = Predio::query()->with('zona');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -43,40 +43,72 @@ class PredioService
 
     public function find(Predio $predio): Predio
     {
-        return $predio;
+        return $predio->with('zona');
     }
 
     public function create(array $data): Predio
     {
+        $data = $this->preparePolygonData($data);
+
+        return Predio::create($data)->with('zona');
+    }
+
+    public function update(Predio $predio, array $data): Predio
+    {
+        $data = $this->preparePolygonData($data);
+
+        $predio->update($data);
+
+        return $predio->with('zona');
+    }
+
+    /**
+     * Convierte geometry/polygon del request en un objeto Polygon para la columna.
+     */
+    protected function preparePolygonData(array $data): array
+    {
+        // 1) Geometry estilo GeoJSON (MultiPolygon/Polygon)
         if (isset($data['geometry']) && is_array($data['geometry'])) {
             $geometry = $data['geometry'];
 
-            if (isset($geometry['type']) && $geometry['type'] === 'MultiPolygon') {
+            // Sólo estás usando MultiPolygon por ahora
+            if (($geometry['type'] ?? null) === 'MultiPolygon') {
+                // [ MultiPolygon -> Polygon -> Ring -> [lng,lat] ]
                 $ringCoordinates = $geometry['coordinates'][0][0];
+
                 $points = array_map(function ($coord) {
-                    return new Point($coord[1], $coord[0]);
+                    // GeoJSON = [lng, lat]
+                    return new Point($coord[1], $coord[0]); // (lat, lng)
                 }, $ringCoordinates);
 
                 if ($points[0] != end($points)) {
-                    $points[] = $points[0];
+                    $points[] = $points[0]; // cerrar el polígono
                 }
 
                 $lineString = new LineString($points);
                 $data['polygon'] = new Polygon([$lineString]);
             }
-            // Add other geometry types if needed, but starting with MultiPolygon as per user snippet
-        } else if (isset($data['polygon']) && is_array($data['polygon'])) {
-            // Handle if polygon is passed directly as array of coordinates? 
-            // For now assuming input matches the GeoJSON structure expected or is already processed.
+
+            // Ya no necesito geometry para guardar en DB
+            unset($data['geometry']);
         }
 
-        return Predio::create($data);
-    }
+        // 2) Polygon simple: [ [lat,lng], [lat,lng], ... ]
+        if (isset($data['polygon']) && is_array($data['polygon']) && !$data['polygon'] instanceof Polygon) {
+            $points = array_map(function ($coord) {
+                // Aquí asumimos que viene [lat, lng]
+                return new Point($coord[0], $coord[1]);
+            }, $data['polygon']);
 
-    public function update(Predio $predio, array $data): Predio
-    {
-        $predio->update($data);
-        return $predio;
+            if ($points && $points[0] != end($points)) {
+                $points[] = $points[0];
+            }
+
+            $lineString = new LineString($points);
+            $data['polygon'] = new Polygon([$lineString]);
+        }
+
+        return $data;
     }
 
     public function delete(Predio $predio): void

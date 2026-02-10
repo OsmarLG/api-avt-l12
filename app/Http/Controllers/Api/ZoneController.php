@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreZoneRequest;
-use App\Http\Requests\UpdateZoneRequest;
+use App\Http\Requests\Api\Zone\StoreZoneRequest;
+use App\Http\Requests\Api\Zone\UpdateZoneRequest;
 use App\Models\Zone;
 use App\Services\Api\ZoneService;
 use Illuminate\Http\JsonResponse;
