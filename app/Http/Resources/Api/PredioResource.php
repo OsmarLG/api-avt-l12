@@ -15,7 +15,7 @@ class PredioResource extends JsonResource
         return [
             'id' => $this->id,
             'clave_catastral' => $this->clave_catastral,
-            // 'polygon' => $this->polygon, // geometry might be too heavy to always return?
+            'polygon' => $this->polygon, // geometry might be too heavy to always return?
             'gid' => $this->gid,
             'condicion' => $this->condicion,
             'tipo_predio' => $this->tipo_predio,
