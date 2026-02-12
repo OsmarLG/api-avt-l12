@@ -29,7 +29,7 @@ class PredioService
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Predio::query()->load('zone');
+        $query = Predio::query()->with('zone');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
