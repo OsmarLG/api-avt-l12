@@ -30,6 +30,7 @@ class PredioResource extends JsonResource
             'manzana' => $this->manzana,
             'area' => $this->area,
             'zona_id' => $this->zona_id,
+            'estado' => $this->estado,
             'zona' => new ZoneResource($this->whenLoaded('zona')),
         ];
     }

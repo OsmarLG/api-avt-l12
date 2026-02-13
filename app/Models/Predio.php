@@ -29,11 +29,16 @@ class Predio extends Model
         'manzana',
         'area',
         'zona_id',
+        'estado'
     ];
 
     protected $casts = [
         'polygon' => Polygon::class,
     ];
+
+    const ESTADO_DISPONIBLE = 'disponible';
+    const ESTADO_PAGANDO = 'pagando';
+    const ESTADO_PAGADO = 'pagado';
 
     public function zone(): BelongsTo
     {
