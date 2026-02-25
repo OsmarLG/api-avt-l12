@@ -16,6 +16,7 @@ Route::prefix('predios')->group(function () {
 
     // CRUD
     Route::get('/', [PredioController::class, 'index']);
+    Route::get('/withoutPagination', [PredioController::class, 'indexWithoutPagination']);
     Route::get('/{predio}', [PredioController::class, 'show']);
     Route::post('/', [PredioController::class, 'store']);
     Route::put('/{predio}', [PredioController::class, 'update']);

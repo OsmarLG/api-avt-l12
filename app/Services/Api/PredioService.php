@@ -250,4 +250,18 @@ class PredioService
             );
         });
     }
+
+    public function indexWithoutPagination(array $filters)
+    {
+        $query = Predio::query()->with('zone');
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where('clave_catastral', 'like', "%{$search}%")
+                ->orWhere('propietario', 'like', "%{$search}%")
+                ->orWhere('ubicacion', 'like', "%{$search}%");
+        }
+        
+        return $query->get();
+    }
 }

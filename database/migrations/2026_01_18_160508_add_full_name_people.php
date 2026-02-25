@@ -12,18 +12,21 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('people', function (Blueprint $table) {
-            // SQLite supports adding VIRTUAL generated columns, but not STORED.
-            // Also using standard concatenation || for better compatibility if CONCAT_WS is missing.
+
             DB::statement("
             ALTER TABLE people
             ADD COLUMN fullname VARCHAR(255)
             GENERATED ALWAYS AS (
                 TRIM(
-                    COALESCE(nombres, '') || ' ' || 
-                    COALESCE(apellido_paterno, '') || ' ' || 
-                    COALESCE(apellido_materno, '')
+                    CONCAT(
+                        COALESCE(nombres, ''),
+                        ' ',
+                        COALESCE(apellido_paterno, ''),
+                        ' ',
+                        COALESCE(apellido_materno, '')
+                    )
                 )
-            ) VIRTUAL
+            ) STORED;
         ");
 
             DB::statement("

@@ -17,9 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PredioController extends Controller
 {
-    public function __construct(protected PredioService $predioService)
-    {
-    }
+    public function __construct(protected PredioService $predioService) {}
 
     /**
      * Display a listing of the resource.
@@ -130,5 +128,18 @@ class PredioController extends Controller
     {
         return $this->select($request);
     }
-}
 
+
+    /**
+     * Display a listing of the resource without pagination.
+     */
+    public function indexWithoutPagination(IndexPredioRequest $request)
+    {
+        $validated = $request->validated();
+        $items = $this->predioService->indexWithoutPagination($validated);
+
+        return ApiResponse::ok([
+            'items' => PredioResource::collection($items),
+        ]);
+    }
+}
