@@ -19,6 +19,7 @@ class PersonResource extends JsonResource
             'nombres' => $this->nombres,
             'apellido_paterno' => $this->apellido_paterno,
             'apellido_materno' => $this->apellido_materno,
+            'fullname' => $this->fullname,
             'sexo' => $this->sexo,
             'fecha_nacimiento' => optional($this->fecha_nacimiento)->format('Y-m-d'),
             'edad' => $this->edad,
