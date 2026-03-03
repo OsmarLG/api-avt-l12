@@ -14,6 +14,7 @@ class Abono extends Model
         'pago_id',
         'letra_id',
         'monto',
+        "estado",
     ];
 
     protected $casts = [

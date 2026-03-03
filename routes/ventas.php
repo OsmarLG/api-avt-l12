@@ -5,3 +5,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::apiResource('ventas', VentaController::class);
 Route::post('ventas/{venta}/cancel', [VentaController::class, 'cancel']);
+Route::post('ventas/indexMonitor', [VentaController::class, 'cancel']);

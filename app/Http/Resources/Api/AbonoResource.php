@@ -14,6 +14,7 @@ class AbonoResource extends JsonResource
             'pago_id' => $this->pago_id,
             'letra_id' => $this->letra_id,
             'monto' => $this->monto,
+            "estado" => $this->estado,
             'created_at' => optional($this->created_at)->toISOString(),
         ];
     }
