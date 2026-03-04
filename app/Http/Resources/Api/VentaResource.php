@@ -26,6 +26,9 @@ class VentaResource extends JsonResource
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),
             'letras' => LetraResource::collection($this->whenLoaded('letras')),
+            "monto_restante_letra" => $this->monto_restante_letra,
+            "proxima_letra_id" => $this->proxima_letra_id,
+            "proxima_letra" => new LetraResource($this->whenLoaded('proximaLetra')),
         ];
     }
 }

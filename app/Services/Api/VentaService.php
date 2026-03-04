@@ -12,7 +12,7 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador', 'aval', 'predio', 'user', 'cancelledBy']);
+        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', "proximaLetra"]);
 
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
@@ -30,7 +30,7 @@ class VentaService
         $sortDir = $filters['sort_dir'] ?? 'desc';
 
         return $query->orderBy($sortBy, $sortDir)
-            ->paginate($filters['per_page'] ?? 15)
+            ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
     }
 
@@ -92,50 +92,5 @@ class VentaService
             ]);
             $fecha->addMonth();
         }
-    }
-
-    public function ventasMonitorPaginated()
-    {
-        return DB::table('ventas')
-            ->leftJoin('predios', 'predios.id', '=', 'ventas.predio_id')
-            ->join('zones', 'predios.zona_id', '=', 'zones.id')
-            ->join('people', 'people.id', '=', 'ventas.person_id')
-
-            // letra pendiente (subquery)
-            ->leftJoin('letras as l', function ($join) {
-                $join->on('l.id', '=', DB::raw('(
-                SELECT l2.id
-                FROM letras l2
-                WHERE l2.venta_id = ventas.id
-                AND l2.estado = "pendiente"
-                ORDER BY l2.fecha_vencimiento ASC
-                LIMIT 1
-            )'));
-            })
-
-            // abonos agrupados
-            ->leftJoin(DB::raw('(
-            SELECT 
-                letra_id,
-                SUM(monto) AS total_abonado
-            FROM abonos
-            GROUP BY letra_id
-        ) as ab'), 'ab.letra_id', '=', 'l.id')
-
-            ->select([
-                'ventas.*',
-                'predios.*',
-                'zones.*',
-                'people.*',
-
-                'l.id as letra_id',
-                'l.fecha_vencimiento',
-                'l.monto as monto_letra',
-
-                DB::raw('IFNULL(ab.total_abonado, 0) as total_abonado'),
-                DB::raw('(l.monto - IFNULL(ab.total_abonado, 0)) as saldo_letra'),
-            ])
-            ->orderByDesc('ventas.id')
-            ->paginate(10);
     }
 }

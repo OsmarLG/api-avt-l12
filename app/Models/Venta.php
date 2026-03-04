@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venta extends Model
@@ -62,5 +63,40 @@ class Venta extends Model
     public function letras(): HasMany
     {
         return $this->hasMany(Letra::class);
+    }
+
+    public function proximaLetra(): BelongsTo
+    {
+        return $this->belongsTo(
+            Letra::class,
+            'proxima_letra_id', 
+            'id'                
+        );
+    }
+
+    public function calcularCache(): void
+    {
+        //este cache debe usarse en:
+        //creacion de venta
+        //al cancelar un pago
+        //al pagar 
+
+
+        $proximaLetra = $this->letras()
+            ->where('estado', 'pendiente')
+            ->orderBy('fecha_vencimiento')
+            ->first();
+
+        if (!$proximaLetra) {
+            // No hay letras pendientes
+            $this->proxima_letra_id = null;
+            $this->monto_restante_letra = 0;
+            $this->save();
+            return;
+        }
+
+        $this->proxima_letra_id = $proximaLetra->id;
+        $this->monto_restante_letra = $proximaLetra->montoRestante();
+        $this->save();
     }
 }

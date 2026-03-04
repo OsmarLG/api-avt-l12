@@ -132,6 +132,11 @@ class PersonService
 
     private function applyFilters(Builder $query, array $filters): void
     {
+        //optimizar query
+        //usar algo como esto
+        //foreach ($terms as $term) {
+        //$name->where('fullname_search', 'like', "{$term}%");
+        //}
         if (!empty($filters['search'])) {
             $s = trim($filters['search']);
             $terms = preg_split('/\s+/', $s);

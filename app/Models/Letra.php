@@ -36,4 +36,13 @@ class Letra extends Model
     {
         return $this->hasMany(Abono::class);
     }
+
+    public function montoRestante(): float
+    {
+        $totalAbonado = $this->abonos()
+            ->where('estado', 'activo')
+            ->sum('monto');
+
+        return max($this->monto - $totalAbonado, 0);
+    }
 }
