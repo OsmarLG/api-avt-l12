@@ -17,7 +17,7 @@ return new class extends Migration
                 'letras_venta_estado_fecha_idx'
             );
             $table->enum("tipo", ["letra", "anticipo", "contado"])->default("letra");
-            $table->date("fecha_expiracion");
+            $table->date("fecha_expiracion")->nullable();
         });
     }
 

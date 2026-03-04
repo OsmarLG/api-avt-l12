@@ -14,7 +14,6 @@ class LetraResource extends JsonResource
             'venta_id' => $this->venta_id,
             'descripcion' => $this->descripcion,
             "tipo" => $this->tipo,
-            "fecha_expiracion" => $this->fecha_expiracion,
             'monto' => $this->monto,
             'fecha_vencimiento' => optional($this->fecha_vencimiento)->format('Y-m-d'),
             'estado' => $this->estado,
