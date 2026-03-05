@@ -35,6 +35,7 @@ class VentaController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
+                'links' => $paginator->linkCollection(),
             ],
         ]);
     }
