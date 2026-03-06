@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use MatanYadaev\EloquentSpatial\EloquentSpatial;
 use MatanYadaev\EloquentSpatial\Enums\Srid;
-
+use Illuminate\Support\Facades\URL;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        URL::forceScheme('https');
+
         //
         // Para Scramble
         Scramble::afterOpenApiGenerated(function ($openApi) {
@@ -33,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Para Scramble Production
-        Gate::define('viewApiDocs', function () {
+        Gate::define('viewApiDocs', function ($user = null) {
             return true;
         });
 

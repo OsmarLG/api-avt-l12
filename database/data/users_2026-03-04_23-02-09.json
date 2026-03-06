@@ -1,0 +1,48 @@
+[{
+    "id": 1,
+    "name": "Osmar Liera",
+    "username": "osmarlg",
+    "email": "lieragomezosmaralejandro@gmail.com",
+    "is_active": 1,
+    "email_verified_at": "2026-01-20 20:11:00",
+    "password": "$2y$12$WBjiROogIGYLj8xYJT3TCexpzkcIexD.JUszcRrdo\/kZJ6zPpOXmi",
+    "remember_token": null,
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 2,
+    "name": "Jeremy Ojeda",
+    "username": "jeremy",
+    "email": "jeremy.ojeda@hotmail.com",
+    "is_active": 1,
+    "email_verified_at": "2026-01-20 20:11:01",
+    "password": "$2y$12$k89yc\/DuqMk282M60JUbsOiu9TtiriNYqyvuRJjj2X0rWP6GqTcAW",
+    "remember_token": null,
+    "created_at": "2026-01-20 20:11:01",
+    "updated_at": "2026-01-20 20:11:01"
+},
+{
+    "id": 3,
+    "name": "Admin User",
+    "username": "Edgar Vega",
+    "email": "admin@avt.com",
+    "is_active": 1,
+    "email_verified_at": "2026-01-20 20:11:02",
+    "password": "$2y$12$DOkNfLERqcny.owY5HPtr.AZmcH94RKk2JOlEG.xEhm3woIfyX6Je",
+    "remember_token": null,
+    "created_at": "2026-01-20 20:11:02",
+    "updated_at": "2026-01-21 02:19:58"
+},
+{
+    "id": 4,
+    "name": "Artemisa Hirales Manriquez",
+    "username": "Artemisa",
+    "email": "usuario_kuzgfxcj@correo.com",
+    "is_active": 1,
+    "email_verified_at": null,
+    "password": "$2y$12$lEkTIRrjh0VtFYgnONCDDuCQw0PRE\/M2NFwkm\/uWZtcY5Ihlj\/Yri",
+    "remember_token": null,
+    "created_at": "2026-01-29 21:05:26",
+    "updated_at": "2026-01-29 21:05:26"
+}]
