@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Para Scramble Production
-        Gate::define('viewApiDocs', function () {
+        Gate::define('viewApiDocs', function ($user = null) {
             return true;
         });
 
