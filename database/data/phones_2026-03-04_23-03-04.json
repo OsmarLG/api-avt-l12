@@ -1,0 +1,108 @@
+[{
+    "id": 1,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 2,
+    "number": "6121764894",
+    "type": "celular",
+    "created_at": "2026-01-29 21:18:06",
+    "updated_at": "2026-01-29 21:18:06"
+},
+{
+    "id": 2,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 2,
+    "number": "6121768838",
+    "type": "celular",
+    "created_at": "2026-01-29 21:18:06",
+    "updated_at": "2026-01-29 21:18:06"
+},
+{
+    "id": 3,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 3,
+    "number": "9211019127",
+    "type": "celular",
+    "created_at": "2026-02-04 00:24:59",
+    "updated_at": "2026-02-04 00:24:59"
+},
+{
+    "id": 4,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 5,
+    "number": "6124444542",
+    "type": "celular",
+    "created_at": "2026-02-04 19:13:51",
+    "updated_at": "2026-02-04 19:13:51"
+},
+{
+    "id": 5,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 5,
+    "number": "6182837571",
+    "type": "celular",
+    "created_at": "2026-02-04 19:13:51",
+    "updated_at": "2026-02-04 19:13:51"
+},
+{
+    "id": 6,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 6,
+    "number": "6182837571",
+    "type": "celular",
+    "created_at": "2026-02-04 19:27:30",
+    "updated_at": "2026-02-04 19:27:30"
+},
+{
+    "id": 7,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 6,
+    "number": "6751081321",
+    "type": "celular",
+    "created_at": "2026-02-04 19:27:30",
+    "updated_at": "2026-02-04 19:27:30"
+},
+{
+    "id": 8,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 7,
+    "number": "5620215938",
+    "type": "celular",
+    "created_at": "2026-02-04 23:30:39",
+    "updated_at": "2026-02-04 23:30:39"
+},
+{
+    "id": 9,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 4,
+    "number": "9212236349",
+    "type": "celular",
+    "created_at": "2026-02-05 13:08:58",
+    "updated_at": "2026-02-05 13:08:58"
+},
+{
+    "id": 10,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 4,
+    "number": "9211019127",
+    "type": "celular",
+    "created_at": "2026-02-05 13:11:22",
+    "updated_at": "2026-02-05 13:11:22"
+},
+{
+    "id": 11,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 8,
+    "number": "6121557442",
+    "type": "celular",
+    "created_at": "2026-02-11 10:30:09",
+    "updated_at": "2026-02-11 10:30:09"
+},
+{
+    "id": 12,
+    "phoneable_type": "App\\Models\\Person",
+    "phoneable_id": 8,
+    "number": "6121052000",
+    "type": "celular",
+    "created_at": "2026-02-11 10:30:09",
+    "updated_at": "2026-02-11 10:30:09"
+}]

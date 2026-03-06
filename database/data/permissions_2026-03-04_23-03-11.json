@@ -1,0 +1,42 @@
+[{
+    "id": 1,
+    "name": "users.view",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 2,
+    "name": "users.create",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 3,
+    "name": "users.update",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 4,
+    "name": "users.delete",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 5,
+    "name": "roles.manage",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+},
+{
+    "id": 6,
+    "name": "permissions.manage",
+    "guard_name": "web",
+    "created_at": "2026-01-20 20:11:00",
+    "updated_at": "2026-01-20 20:11:00"
+}]
