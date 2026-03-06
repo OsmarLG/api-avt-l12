@@ -18,11 +18,17 @@ class PagoService
             $query->where('person_id', $filters['person_id']);
         }
 
+        if (!empty($filters['venta_id'])) {
+            $query->whereHas('abonos.letra', function ($q) use ($filters) {
+                $q->where('venta_id', $filters['venta_id']);
+            });
+        }
+
         $sortBy = $filters['sort_by'] ?? 'created_at';
         $sortDir = $filters['sort_dir'] ?? 'desc';
 
         return $query->orderBy($sortBy, $sortDir)
-            ->paginate($filters['per_page'] ?? 15)
+            ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
     }
 
