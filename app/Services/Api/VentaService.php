@@ -36,7 +36,7 @@ class VentaService
 
     public function find(Venta $venta): Venta
     {
-        return $venta->load(['comprador', 'aval', 'predio', "predio.zone", 'user', 'cancelledBy', "proximaLetra"]);
+        return $venta->load(['comprador', "comprador.phones", 'aval', "aval.phones", 'predio', "predio.zone", 'user', 'cancelledBy', "proximaLetra"]);
     }
 
     public function create(array $data, int $userId): Venta

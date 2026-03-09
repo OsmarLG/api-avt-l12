@@ -23,7 +23,7 @@ class LetraService
         $sortDir = $filters['sort_dir'] ?? 'asc';
 
         return $query->orderBy($sortBy, $sortDir)
-            ->paginate($filters['per_page'] ?? 15)
+            ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
     }
 
