@@ -12,7 +12,7 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', "proximaLetra"]);
+        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra']);
 
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
@@ -36,18 +36,40 @@ class VentaService
 
     public function find(Venta $venta): Venta
     {
-        return $venta->load(['comprador', "comprador.phones", 'aval', "aval.phones", 'predio', "predio.zone", 'user', 'cancelledBy', "proximaLetra"]);
+        return $venta->load(['comprador', 'comprador.phones', 'aval', 'aval.phones', 'predio', 'predio.zone', 'user', 'cancelledBy', 'proximaLetra']);
     }
 
     public function create(array $data, int $userId): Venta
     {
         return DB::transaction(function () use ($data, $userId) {
             $data['user_id'] = $userId;
+
+            if (isset($data['comprador_id'])) {
+                $data['person_id'] = $data['comprador_id'];
+            }
+
             $venta = Venta::create($data);
 
-            if ($venta->metodo_pago === 'meses') {
+            if (isset($data['letras']) && is_array($data['letras'])) {
+                foreach ($data['letras'] as $letraData) {
+                    Letra::create([
+                        'venta_id' => $venta->id,
+                        'descripcion' => $letraData['descripcion'],
+                        'monto' => $letraData['monto'],
+                        'consecutivo' => $letraData['consecutivo'],
+                        'tipo' => $letraData['tipo'],
+                        'fecha_vencimiento' => \Carbon\Carbon::parse($letraData['fecha_expiracion']),
+                        'estado' => 'pendiente',
+                    ]);
+                }
+                $venta->calcularCache();
+            } elseif ($venta->metodo_pago === 'meses') {
                 $this->generateLetras($venta);
+                $venta->calcularCache();
             }
+
+            // Actualizar estado del predio
+            $venta->predio->update(['estado' => 'pagando']);
 
             return $venta->load(['comprador', 'aval', 'predio', 'user']);
         });

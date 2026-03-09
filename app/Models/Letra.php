@@ -18,10 +18,9 @@ class Letra extends Model
         'monto',
         'fecha_vencimiento',
         'estado',
-        "tipo",
-        "fecha_expiracion",
-        "saldo",
-        "consecutvio"
+        'tipo',
+        'saldo',
+        'consecutivo',
     ];
 
     protected $casts = [
