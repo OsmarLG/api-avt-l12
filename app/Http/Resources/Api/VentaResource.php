@@ -30,6 +30,7 @@ class VentaResource extends JsonResource
             "monto_restante_letra" => $this->monto_restante_letra,
             "proxima_letra_id" => $this->proxima_letra_id,
             "proxima_letra" => new LetraResource($this->whenLoaded('proximaLetra')),
+            'files' => FileResource::collection($this->whenLoaded('files')),
         ];
     }
 }

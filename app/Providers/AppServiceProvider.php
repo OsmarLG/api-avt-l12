@@ -9,6 +9,8 @@ use Illuminate\Support\ServiceProvider;
 use MatanYadaev\EloquentSpatial\EloquentSpatial;
 use MatanYadaev\EloquentSpatial\Enums\Srid;
 use Illuminate\Support\Facades\URL;
+use App\Models\Venta;
+use App\Observers\VentaObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Venta::observe(VentaObserver::class);
         URL::forceScheme('https');
 
         //

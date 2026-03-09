@@ -68,10 +68,10 @@ class Person extends Model
         return $this->hasMany(Reference::class);
     }
 
-    protected function edad(): Attribute
+    protected function fullName(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->fecha_nacimiento?->age,
+            get: fn() => trim("{$this->nombres} {$this->apellido_paterno} {$this->apellido_materno}"),
         );
     }
 }

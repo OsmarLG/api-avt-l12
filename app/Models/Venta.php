@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venta extends Model
@@ -26,6 +27,7 @@ class Venta extends Model
         'meses_a_pagar',
         'id_cancelo',
         'comentario_cancelacion',
+        'folio',
     ];
 
     protected $casts = [
@@ -34,6 +36,17 @@ class Venta extends Model
         'fecha_primer_abono' => 'date',
         'meses_a_pagar' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Venta $venta) {
+            if (!$venta->folio) {
+                $lastVenta = Venta::withTrashed()->orderBy('id', 'desc')->first();
+                $nextId = $lastVenta ? $lastVenta->id + 1 : 1;
+                $venta->folio = str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            }
+        });
+    }
 
     public function comprador(): BelongsTo
     {
@@ -65,12 +78,17 @@ class Venta extends Model
         return $this->hasMany(Letra::class);
     }
 
+    public function files(): MorphMany
+    {
+        return $this->morphMany(File::class, 'fileable');
+    }
+
     public function proximaLetra(): BelongsTo
     {
         return $this->belongsTo(
             Letra::class,
-            'proxima_letra_id', 
-            'id'                
+            'proxima_letra_id',
+            'id'
         );
     }
 

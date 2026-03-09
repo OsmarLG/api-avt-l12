@@ -12,17 +12,17 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra']);
+        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
 
-        if (! empty($filters['person_id'])) {
+        if (!empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
         }
 
-        if (! empty($filters['predio_id'])) {
+        if (!empty($filters['predio_id'])) {
             $query->where('predio_id', $filters['predio_id']);
         }
 
-        if (! empty($filters['estado'])) {
+        if (!empty($filters['estado'])) {
             $query->where('estado', $filters['estado']);
         }
 
@@ -36,7 +36,7 @@ class VentaService
 
     public function find(Venta $venta): Venta
     {
-        return $venta->load(['comprador', 'comprador.phones', 'aval', 'aval.phones', 'predio', 'predio.zone', 'user', 'cancelledBy', 'proximaLetra']);
+        return $venta->load(['comprador', 'comprador.phones', 'aval', 'aval.phones', 'predio', 'predio.zone', 'user', 'cancelledBy', 'proximaLetra', 'files']);
     }
 
     public function create(array $data, int $userId): Venta
@@ -71,7 +71,7 @@ class VentaService
             // Actualizar estado del predio
             $venta->predio->update(['estado' => 'pagando']);
 
-            return $venta->load(['comprador', 'aval', 'predio', 'user']);
+            return $venta->load(['comprador', 'aval', 'predio', 'user', 'files']);
         });
     }
 
@@ -79,7 +79,7 @@ class VentaService
     {
         $venta->update($data);
 
-        return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy']);
+        return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
     }
 
     public function cancel(Venta $venta, string $comment, int $userId): Venta
