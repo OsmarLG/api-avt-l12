@@ -46,6 +46,7 @@ class VentaDocumentService
             'mime_type' => 'application/pdf',
             'size' => Storage::disk($disk)->size($path),
             'visibility' => 'public',
+            "tipo" => "contrato"
         ]);
     }
 
@@ -80,6 +81,7 @@ class VentaDocumentService
             'mime_type' => 'application/pdf',
             'size' => Storage::disk($disk)->size($path),
             'visibility' => 'public',
+            "tipo" => "anticipo",
         ]);
     }
 }

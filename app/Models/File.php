@@ -23,6 +23,7 @@ class File extends Model
         'mime_type',
         'size',
         'visibility',
+        "tipo"
     ];
 
     protected static function booted(): void

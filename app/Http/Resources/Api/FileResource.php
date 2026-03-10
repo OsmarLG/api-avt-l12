@@ -21,6 +21,7 @@ class FileResource extends JsonResource
             'size' => $this->size,
             'visibility' => $this->visibility,
             'url' => $this->url,
+            'tipo' => $this->tipo,
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),
         ];
