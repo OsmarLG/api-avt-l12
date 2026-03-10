@@ -91,10 +91,13 @@ class VentaService
                 'comentario_cancelacion' => $comment,
             ]);
 
-            // Optional: cancel pending installments?
-            // $venta->letras()->where('estado', 'pendiente')->update(['estado' => 'cancelado']);
+            // Liberar el predio
+            $venta->predio->update(['estado' => 'disponible']);
 
-            return $venta;
+            // Cancelar letras pendientes
+            $venta->letras()->where('estado', 'pendiente')->update(['estado' => 'cancelado']);
+
+            return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
         });
     }
 

@@ -17,7 +17,8 @@ class VentaController extends Controller
 {
     public function __construct(
         private readonly VentaService $service
-    ) {}
+    ) {
+    }
 
     /**
      * Get a listing of sales.

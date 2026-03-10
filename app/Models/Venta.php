@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+
 
 class Venta extends Model
 {
@@ -41,12 +43,12 @@ class Venta extends Model
     {
         static::creating(function (Venta $venta) {
             if (!$venta->folio) {
-                $lastVenta = Venta::withTrashed()->orderBy('id', 'desc')->first();
-                $nextId = $lastVenta ? $lastVenta->id + 1 : 1;
-                $venta->folio = str_pad($nextId, 4, '0', STR_PAD_LEFT);
+                $lastId = DB::table('ventas')->max('id') ?? 0;
+                $venta->folio = str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
             }
         });
     }
+
 
     public function comprador(): BelongsTo
     {
