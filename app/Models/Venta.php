@@ -116,7 +116,11 @@ class Venta extends Model
         }
 
         $this->proxima_letra_id = $proximaLetra->id;
-        $this->monto_restante_letra = $proximaLetra->montoRestante();
         $this->save();
+    }
+
+    public function letrasPendientes()
+    {
+        return $this->letras()->where('estado', 'pendiente')->get();
     }
 }

@@ -12,6 +12,7 @@ class PagoResource extends JsonResource
         return [
             'id' => $this->id,
             'monto' => $this->monto,
+            'metodo_pago' => $this->metodo_pago,
             'person' => new PersonResource($this->whenLoaded('person')),
             'estado' => $this->estado,
             'comentario_cancelacion' => $this->comentario_cancelacion,

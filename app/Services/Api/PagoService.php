@@ -5,8 +5,10 @@ namespace App\Services\Api;
 use App\Models\Abono;
 use App\Models\Letra;
 use App\Models\Pago;
+use App\Models\Venta;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PagoService
 {
@@ -40,23 +42,56 @@ class PagoService
     public function create(array $data, int $userId): Pago
     {
         return DB::transaction(function () use ($data, $userId) {
-            $abonosData = $data['abonos'];
-            unset($data['abonos']);
 
-            $data['user_id'] = $userId;
-            $pago = Pago::create($data);
+            $monto = (float) $data["monto"];
 
-            foreach ($abonosData as $abonoRow) {
+            $venta = Venta::find($data["venta_id"]);
+            $folio = 'P-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+
+            $pago = Pago::create([
+                'monto' => $data["monto"],
+                'person_id' => $venta->person_id,
+                'folio' => $folio,
+                'fecha_pago' => now(),
+                'user_id' => $userId,
+                'metodo_pago' => $data["metodo_pago"]
+            ]);
+
+            // distribuir el monto entre letras pendientes
+            $restante = $monto;
+            foreach ($venta->letrasPendientes() as $letra) {
+                if ($restante <= 0) {
+                    break;
+                }
+
+                $saldoLetra = $letra->montoRestante();
+                if ($saldoLetra <= 0) {
+                    continue;
+                }
+
+                $aplicado = min($saldoLetra, $restante);
+
                 Abono::create([
                     'pago_id' => $pago->id,
-                    'letra_id' => $abonoRow['letra_id'],
-                    'monto' => $abonoRow['monto'],
+                    'letra_id' => $letra->id,
+                    'monto' => $aplicado,
                 ]);
 
-                $this->updateLetraStatus($abonoRow['letra_id']);
+                $restante -= $aplicado;
+
+                // actualizar saldo y estado de la letra según lo abonado
+                $nuevoSaldo = max($saldoLetra - $aplicado, 0);
+                $letra->saldo = $nuevoSaldo;
+                if ($nuevoSaldo == 0) {
+                    $letra->estado = 'pagado';
+                } elseif ($nuevoSaldo < $letra->monto) {
+                    $letra->estado = 'parcial';
+                }
+                $letra->save();
             }
 
-            return $pago->load(['person', 'abonos']);
+            // recalc cache de venta tras abonos
+            $venta->calcularCache();
         });
     }
 
@@ -69,6 +104,9 @@ class PagoService
                 'comentario_cancelacion' => $comment,
             ]);
 
+            $pago->abonos()->update([
+                'estado' => 'cancelado'
+            ]);
             // Revert status of affected installments
             foreach ($pago->abonos as $abono) {
                 $this->updateLetraStatus($abono->letra_id);
