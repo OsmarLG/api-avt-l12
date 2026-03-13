@@ -85,13 +85,15 @@ class PagoService
                 if ($nuevoSaldo == 0) {
                     $letra->estado = 'pagado';
                 } elseif ($nuevoSaldo < $letra->monto) {
-                    $letra->estado = 'parcial';
+                    $letra->estado = 'pendiente';
                 }
                 $letra->save();
             }
 
             // recalc cache de venta tras abonos
             $venta->calcularCache();
+
+            return $pago;
         });
     }
 
@@ -132,7 +134,7 @@ class PagoService
         if ($totalAbonado >= $letra->monto) {
             $letra->estado = 'pagado';
         } elseif ($totalAbonado > 0) {
-            $letra->estado = 'parcial';
+            $letra->estado = 'pendiente';
         } else {
             $letra->estado = 'pendiente';
         }

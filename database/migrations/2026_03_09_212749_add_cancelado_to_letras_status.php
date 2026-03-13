@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('letras', function (Blueprint $table) {
-            $table->enum('estado', ['pendiente', 'pagado', 'parcial', 'cancelado'])->default('pendiente')->change();
+            $table->enum('estado', ['pendiente', 'pagado', '', 'cancelado'])->default('pendiente')->change();
         });
     }
 

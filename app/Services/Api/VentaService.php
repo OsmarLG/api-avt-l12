@@ -56,7 +56,7 @@ class VentaService
                         'venta_id' => $venta->id,
                         'descripcion' => $letraData['descripcion'],
                         'monto' => $letraData['monto'],
-                        'saldo' => $letraData['saldo'],
+                        'saldo' => $letraData['monto'],
                         'consecutivo' => $letraData['consecutivo'],
                         'tipo' => $letraData['tipo'],
                         'fecha_vencimiento' => \Carbon\Carbon::parse($letraData['fecha_expiracion']),

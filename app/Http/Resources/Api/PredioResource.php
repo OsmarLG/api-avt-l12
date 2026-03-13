@@ -6,6 +6,7 @@ use App\Models\Predio;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Api\ZoneResource;
+use App\Http\Resources\Api\VentaResource;
 
 /** @mixin Predio */
 class PredioResource extends JsonResource
@@ -32,6 +33,8 @@ class PredioResource extends JsonResource
             'zona_id' => $this->zona_id,
             'estado' => $this->estado,
             'zona' => new ZoneResource($this->whenLoaded('zone')),
+            'ventaActiva' => new VentaResource($this->whenLoaded('ventaActiva')),
+            'ventas' => new VentaResource($this->whenLoaded('ventas')),
         ];
     }
 }

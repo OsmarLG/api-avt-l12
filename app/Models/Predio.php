@@ -7,6 +7,8 @@ use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Zone;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Venta;
 
 class Predio extends Model
 {
@@ -43,5 +45,15 @@ class Predio extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class, 'zona_id');
+    }
+
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class);
+    }
+
+    public function ventaActiva()
+    {
+        return $this->hasOne(Venta::class)->where('estado', 'pagando');
     }
 }

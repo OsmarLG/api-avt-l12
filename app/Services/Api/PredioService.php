@@ -43,7 +43,7 @@ class PredioService
 
     public function find(Predio $predio): Predio
     {
-        return $predio->load('zone');
+        return $predio->load(['zone', 'ventaActiva']);
     }
 
     public function create(array $data): Predio
