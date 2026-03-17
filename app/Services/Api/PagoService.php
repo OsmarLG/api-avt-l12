@@ -50,6 +50,9 @@ class PagoService
 
             $pago = Pago::create([
                 'monto' => $data["monto"],
+                'recibi' => $data["recibi"],
+                'cambio' => $data["cambio"],
+                'referenica' => $data["referenica"] ?? ($data["referencia"] ?? null),
                 'person_id' => $venta->person_id,
                 'folio' => $folio,
                 'fecha_pago' => now(),
@@ -93,8 +96,59 @@ class PagoService
             // recalc cache de venta tras abonos
             $venta->calcularCache();
 
+            $this->savePagoTicket($pago->id);
+
             return $pago;
         });
+    }
+
+    private function savePagoTicket(int $pagoId): void
+    {
+        $pago = Pago::query()
+            ->with(['person', 'user', 'abonos.letra'])
+            ->findOrFail($pagoId);
+
+        $ticketJson = json_encode([
+            'pago' => $pago->toArray(),
+            'abonos' => $pago->abonos->map(function (Abono $abono) {
+                return [
+                    'id' => $abono->id,
+                    'monto' => $abono->monto,
+                    'created_at' => optional($abono->created_at)->toISOString(),
+                    'letra' => $abono->letra ? [
+                        'id' => $abono->letra->id,
+                        'venta_id' => $abono->letra->venta_id,
+                        'consecutivo' => $abono->letra->consecutivo,
+                        'descripcion' => $abono->letra->descripcion,
+                        'tipo' => $abono->letra->tipo,
+                        'monto' => $abono->letra->monto,
+                        'saldo' => $abono->letra->saldo,
+                        'estado' => $abono->letra->estado,
+                        'fecha_vencimiento' => optional($abono->letra->fecha_vencimiento)->format('Y-m-d'),
+                    ] : null,
+                ];
+            })->values()->all(),
+        ], JSON_UNESCAPED_UNICODE);
+
+        $exists = DB::table('pagos_tickets')->where('pago_id', $pago->id)->exists();
+
+        if ($exists) {
+            DB::table('pagos_tickets')
+                ->where('pago_id', $pago->id)
+                ->update([
+                    'ticket' => $ticketJson,
+                    'updated_at' => now(),
+                ]);
+
+            return;
+        }
+
+        DB::table('pagos_tickets')->insert([
+            'pago_id' => $pago->id,
+            'ticket' => $ticketJson,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     public function cancel(Pago $pago, string $comment, int $userId): Pago

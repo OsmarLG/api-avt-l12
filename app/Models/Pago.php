@@ -14,6 +14,9 @@ class Pago extends Model
 
     protected $fillable = [
         'monto',
+        'recibi',
+        'cambio',
+        'referenica',
         'person_id',
         'estado',
         'comentario_cancelacion',
@@ -21,10 +24,13 @@ class Pago extends Model
         'folio',
         'fecha_pago',
         'user_id',
+        'metodo_pago',
     ];
 
     protected $casts = [
         'monto' => 'decimal:2',
+        'recibi' => 'decimal:2',
+        'cambio' => 'decimal:2',
         'fecha_pago' => 'date',
     ];
 

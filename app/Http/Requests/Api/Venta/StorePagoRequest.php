@@ -15,6 +15,9 @@ class StorePagoRequest extends FormRequest
     {
         return [
             'monto' => ['required', 'numeric', 'min:0.01'],
+            'recibi' => ['nullable'],
+            'cambio' => ['nullable'],
+            'referenica' => ['nullable', 'string', 'max:255'],
             'venta_id' => ['required', 'exists:ventas,id'],
             'metodo_pago' => ['required', 'in:efectivo,tarjeta_debito,tarjeta_credito,cheque,transferencia'],
         ];
