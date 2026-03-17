@@ -164,8 +164,20 @@ class PagoService
                 'estado' => 'cancelado'
             ]);
             // Revert status of affected installments
+            $ventaIds = [];
             foreach ($pago->abonos as $abono) {
                 $this->updateLetraStatus($abono->letra_id);
+                if ($abono->letra && $abono->letra->venta_id) {
+                    $ventaIds[] = $abono->letra->venta_id;
+                }
+            }
+
+            // Recalcular cache de las ventas afectadas por este pago
+            foreach (array_unique($ventaIds) as $ventaId) {
+                $venta = \App\Models\Venta::find($ventaId);
+                if ($venta) {
+                    $venta->calcularCache();
+                }
             }
 
             return $pago;
