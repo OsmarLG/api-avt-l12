@@ -197,9 +197,10 @@ class PagoService
             })
             ->sum('monto');
 
-        if ($totalAbonado >= $letra->monto) {
+        $letra->saldo = $letra->monto - $totalAbonado;
+        if ($letra->saldo == 0) {
             $letra->estado = 'pagado';
-        } elseif ($totalAbonado > 0) {
+        } elseif ($letra->saldo > 0) {
             $letra->estado = 'pendiente';
         } else {
             $letra->estado = 'pendiente';
