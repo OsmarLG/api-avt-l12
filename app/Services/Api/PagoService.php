@@ -36,7 +36,7 @@ class PagoService
 
     public function find(Pago $pago): Pago
     {
-        return $pago->load(['person', 'user', 'cancelledBy', 'abonos.letra']);
+        return $pago->load(['person', 'user', 'cancelledBy', 'abonos.letra', 'ticket']);
     }
 
     public function create(array $data, int $userId): Pago
