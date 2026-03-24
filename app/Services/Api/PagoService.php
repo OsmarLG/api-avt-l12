@@ -98,7 +98,7 @@ class PagoService
 
             $this->savePagoTicket($pago->id);
 
-            return $pago;
+            return $pago->load("person", "user", "abonos.letra", "ticket");
         });
     }
 
