@@ -47,7 +47,15 @@ class Venta extends Model
                 $venta->folio = str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
             }
         });
+
+        static::saving(function (Venta $venta) {
+            if (!$venta->folio) {
+                $lastId = DB::table('ventas')->max('id') ?? 0;
+                $venta->folio = str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+            }
+        });
     }
+
 
 
     public function comprador(): BelongsTo

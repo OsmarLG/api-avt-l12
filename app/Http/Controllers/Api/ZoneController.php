@@ -19,6 +19,9 @@ class ZoneController extends Controller
     {
     }
 
+    /**
+     * Listar zonas con paginación.
+     */
     public function index(Request $request): JsonResponse
     {
         $paginator = $this->service->paginate($request->all());
@@ -34,29 +37,44 @@ class ZoneController extends Controller
         ]);
     }
 
+    /**
+     * Crear una nueva zona.
+     */
     public function store(StoreZoneRequest $request): JsonResponse
     {
         $zone = $this->service->create($request->validated());
         return ApiResponse::ok(new ZoneResource($zone), 'Zona creada', Response::HTTP_CREATED);
     }
 
+    /**
+     * Mostrar detalles de una zona específica.
+     */
     public function show(Zone $zone): JsonResponse
     {
         return ApiResponse::ok(new ZoneResource($zone));
     }
 
+    /**
+     * Actualizar una zona existente.
+     */
     public function update(UpdateZoneRequest $request, Zone $zone): JsonResponse
     {
         $zone = $this->service->update($zone, $request->validated());
         return ApiResponse::ok(new ZoneResource($zone), 'Zona actualizada');
     }
 
+    /**
+     * Eliminar una zona.
+     */
     public function destroy(Zone $zone): JsonResponse
     {
         $this->service->delete($zone);
         return ApiResponse::ok(null, 'Zona eliminada');
     }
 
+    /**
+     * Obtener lista de zonas para selectores/búsqueda rápida.
+     */
     public function select(Request $request): JsonResponse
     {
         $limit = $request->input('limit', 20);
@@ -64,4 +82,5 @@ class ZoneController extends Controller
 
         return ApiResponse::ok($this->service->selectList($search, $limit));
     }
+
 }
