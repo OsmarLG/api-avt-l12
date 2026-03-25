@@ -12,5 +12,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     require __DIR__ . '/letras.php';
     require __DIR__ . '/abonos.php';
     require __DIR__ . '/files.php';
+    require __DIR__ . '/reports.php';
 });
+
 

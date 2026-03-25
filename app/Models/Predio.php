@@ -10,9 +10,11 @@ use App\Models\Zone;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Venta;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Predio extends Model
 {
-    use HasSpatial;
+    use HasSpatial, HasFactory;
 
     protected $fillable = [
         'clave_catastral',
