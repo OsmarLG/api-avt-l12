@@ -26,6 +26,12 @@ class VentaService
             $query->where('estado', $filters['estado']);
         }
 
+        if (!empty($filters['comprador_nombre'])) {
+            $query->whereHas('comprador', function ($q) use ($filters) {
+                $q->where('fullname', 'like', $filters['comprador_nombre'] . '%');
+            });
+        }
+
         $sortBy = $filters['sort_by'] ?? 'created_at';
         $sortDir = $filters['sort_dir'] ?? 'desc';
 
