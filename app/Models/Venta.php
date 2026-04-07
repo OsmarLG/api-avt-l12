@@ -124,6 +124,7 @@ class Venta extends Model
         }
 
         $this->proxima_letra_id = $proximaLetra->id;
+        $this->saldo_venta = $this->letras()->where('estado', 'pendiente')->sum('saldo');
         $this->save();
     }
 

@@ -18,6 +18,7 @@ class VentaResource extends JsonResource
             'user' => new UserResource($this->whenLoaded('user')),
             'metodo_pago' => $this->metodo_pago,
             'costo_lote' => $this->costo_lote,
+            'saldo_venta' => $this->saldo_venta,
             'folio' => $this->folio,
             'enganche' => $this->enganche,
             'fecha_primer_abono' => optional($this->fecha_primer_abono)->format('Y-m-d'),

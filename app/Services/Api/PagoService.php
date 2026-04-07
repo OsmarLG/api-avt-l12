@@ -107,9 +107,23 @@ class PagoService
         $pago = Pago::query()
             ->with(['person', 'user', 'abonos.letra'])
             ->findOrFail($pagoId);
+        $venta = null;
+        $zona = null;
+        if ($pago->abonos->isNotEmpty()) {
+            $venta = $pago->abonos->first()->letra->venta;
+            $venta->load([
+                'comprador',
+                'aval',
+                'predio.zone',
+                'proximaLetra'
+            ]);
+            $zona = $venta->predio->zone ?? null;
+        }
 
         $ticketJson = json_encode([
+            "zona" => $zona,
             'pago' => $pago->toArray(),
+            "venta" => $venta?->toArray(),
             'abonos' => $pago->abonos->map(function (Abono $abono) {
                 return [
                     'id' => $abono->id,
