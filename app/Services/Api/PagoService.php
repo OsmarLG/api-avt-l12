@@ -34,6 +34,37 @@ class PagoService
             ->withQueryString();
     }
 
+    public function filter(array $filters): array
+    {
+        $query = Pago::query()->with(['ticket']);
+
+        if (!empty($filters['person_id'])) {
+            $query->where('person_id', $filters['person_id']);
+        }
+
+        if (!empty($filters['venta_id'])) {
+            $query->whereHas('abonos.letra', function ($q) use ($filters) {
+                $q->where('venta_id', $filters['venta_id']);
+            });
+        }
+
+        if (!empty($filters['zone_id'])) {
+            $query->whereHas('abonos.letra.venta.predio', function ($q) use ($filters) {
+                $q->where('zona_id', $filters['zone_id']);
+            });
+        }
+
+        if (!empty($filters['fecha_inicial'])) {
+            $query->whereDate('created_at', '>=', $filters['fecha_inicial']);
+        }
+
+        if (!empty($filters['fecha_final'])) {
+            $query->whereDate('created_at', '<=', $filters['fecha_final']);
+        }
+
+        return $query->orderBy('id', 'desc')->get()->all();
+    }
+
     public function find(Pago $pago): Pago
     {
         return $pago->load(['person', 'user', 'cancelledBy', 'abonos.letra', 'ticket']);
