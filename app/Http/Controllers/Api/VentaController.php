@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Venta\CambiarCompradorRequest;
 use App\Http\Requests\Api\Venta\CancelVentaRequest;
 use App\Http\Requests\Api\Venta\StoreVentaRequest;
 use App\Http\Requests\Api\Venta\UpdateVentaRequest;
@@ -17,8 +18,7 @@ class VentaController extends Controller
 {
     public function __construct(
         private readonly VentaService $service
-    ) {
-    }
+    ) {}
 
     /**
      * Get a listing of sales.
@@ -92,6 +92,25 @@ class VentaController extends Controller
         return ApiResponse::ok(
             new VentaResource($venta),
             'Venta cancelada correctamente'
+        );
+    }
+
+    /**
+     * Change the buyer (comprador) of a sale.
+     *
+     * Updates the person_id and optionally the aval_id of the sale.
+     */
+    public function cambiarComprador(CambiarCompradorRequest $request, Venta $venta)
+    {
+        $venta = $this->service->cambiarComprador(
+            $venta,
+            $request->comprador_id,
+            $request->aval_id,
+        );
+
+        return ApiResponse::ok(
+            new VentaResource($venta),
+            'Comprador actualizado correctamente'
         );
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Services\Api;
 
 use App\Models\Letra;
+use App\Models\Person;
+use App\Models\PredioObservacion;
 use App\Models\Venta;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -14,21 +16,21 @@ class VentaService
     {
         $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
 
-        if (!empty($filters['person_id'])) {
+        if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
         }
 
-        if (!empty($filters['predio_id'])) {
+        if (! empty($filters['predio_id'])) {
             $query->where('predio_id', $filters['predio_id']);
         }
 
-        if (!empty($filters['estado'])) {
+        if (! empty($filters['estado'])) {
             $query->where('estado', $filters['estado']);
         }
 
-        if (!empty($filters['comprador_nombre'])) {
+        if (! empty($filters['comprador_nombre'])) {
             $query->whereHas('comprador', function ($q) use ($filters) {
-                $q->where('fullname', 'like', $filters['comprador_nombre'] . '%');
+                $q->where('fullname', 'like', $filters['comprador_nombre'].'%');
             });
         }
 
@@ -78,6 +80,13 @@ class VentaService
             // Actualizar estado del predio
             $venta->predio->update(['estado' => 'pagando']);
 
+            // Crear observación de venta creada
+            $fechaVenta = now()->format('d/m/Y');
+            PredioObservacion::create([
+                'predio_id' => $venta->predio_id,
+                'observacion' => "Venta creada el {$fechaVenta} con folio LG-{$venta->folio}",
+            ]);
+
             return $venta->load(['comprador', 'aval', 'predio', 'user', 'files']);
         });
     }
@@ -103,6 +112,41 @@ class VentaService
 
             // Cancelar letras pendientes
             $venta->letras()->where('estado', 'pendiente')->update(['estado' => 'cancelado']);
+
+            // Crear observación de cancelación
+            $fechaCancelacion = now()->format('d/m/Y');
+            PredioObservacion::create([
+                'predio_id' => $venta->predio_id,
+                'observacion' => "Venta con folio LG-{$venta->folio} cancelada el {$fechaCancelacion}. Motivo: {$comment}",
+            ]);
+
+            return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
+        });
+    }
+
+    public function cambiarComprador(Venta $venta, int $compradorId, ?int $avalId): Venta
+    {
+        return DB::transaction(function () use ($venta, $compradorId, $avalId) {
+            /** @var Person $compradorAnterior */
+            $compradorAnterior = $venta->comprador;
+
+            $updateData = ['person_id' => $compradorId];
+
+            if ($avalId !== null) {
+                $updateData['aval_id'] = $avalId;
+            }
+
+            $venta->update($updateData);
+            $venta->refresh();
+
+            /** @var Person $compradorNuevo */
+            $compradorNuevo = $venta->fresh()->comprador;
+
+            // Crear observación del cambio de propietario
+            PredioObservacion::create([
+                'predio_id' => $venta->predio_id,
+                'observacion' => "Cambio de propietario de {$compradorAnterior->fullname} a {$compradorNuevo->fullname}",
+            ]);
 
             return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
         });
