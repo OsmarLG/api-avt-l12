@@ -14,7 +14,7 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
+        $query = Venta::query()->with(['comprador','comprador.phones', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
 
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
