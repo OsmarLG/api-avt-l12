@@ -14,8 +14,29 @@ class PagoService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Pago::query()->with(['person', 'user', 'cancelledBy']);
+        $query = $this->applyFilters(Pago::query()->with(['person', 'user', 'cancelledBy']), $filters);
 
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+
+        // Get the last pago_id from filtered results
+        $lastPagoId = $this->applyFilters(Pago::query(), $filters)
+            ->orderBy("id", "desc")
+            ->where("estado", "activo")
+            ->value('id');
+
+        $paginator = $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
+
+        $paginator->last_pago_id = $lastPagoId;
+
+        return $paginator;
+    }
+
+    private function applyFilters($query, array $filters)
+    {
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
         }
@@ -26,12 +47,7 @@ class PagoService
             });
         }
 
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortDir = $filters['sort_dir'] ?? 'desc';
-
-        return $query->orderBy($sortBy, $sortDir)
-            ->paginate($filters['per_page'] ?? 10)
-            ->withQueryString();
+        return $query;
     }
 
     public function filter(array $filters): array

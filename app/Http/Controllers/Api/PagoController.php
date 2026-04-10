@@ -28,6 +28,7 @@ class PagoController extends Controller
             'items' => PagoResource::collection($paginator),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
+                'last_pago_id' => $paginator->last_pago_id,
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
