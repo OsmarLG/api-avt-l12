@@ -6,39 +6,39 @@
     <title>Pagarés - {{ $venta->folio }}</title>
     <style>
         @page {
-            margin: 0.5cm;
+            margin: 0.4cm;
             size: legal portrait;
         }
 
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 8.5pt;
-            line-height: 1.25;
+            font-size: 7pt;
+            line-height: 1.2;
             color: #000;
             margin: 0;
             padding: 0;
         }
 
         .pagare-wrapper {
-            padding: 5px;
-            margin-bottom: 25px;
+            padding: 2px;
+            margin-bottom: 6px;
             page-break-inside: avoid;
         }
 
         .pagare-container {
-            border: 5px double #0d3b66; /* Blue ornate border */
-            border-radius: 12px;
-            padding: 8px;
-            height: 485px;
+            border: 4px double #0d3b66; /* Blue ornate border */
+            border-radius: 8px;
+            padding: 5px;
+            height: 228px;
             position: relative;
             background-color: #fff;
         }
 
         .inner-content {
             border: 1px solid #0d3b66;
-            border-radius: 8px;
-            padding: 12px;
-            height: 460px;
+            border-radius: 6px;
+            padding: 6px;
+            height: 215px;
         }
 
         table {
@@ -59,19 +59,19 @@
 
         .label-header {
             font-weight: bold;
-            font-size: 7.5pt;
+            font-size: 6pt;
             display: block;
             border-bottom: 1px solid #0d3b66;
-            padding: 2px;
+            padding: 1px 2px;
             background-color: #f0f4f8;
             color: #0d3b66;
         }
 
         .value-header {
             font-weight: bold;
-            font-size: 11pt;
+            font-size: 9pt;
             display: block;
-            padding: 4px;
+            padding: 2px;
         }
 
         .date-sub-table td {
@@ -86,7 +86,7 @@
         }
 
         .date-label {
-            font-size: 6.5pt;
+            font-size: 5.5pt;
             font-weight: bold;
             display: block;
             border-bottom: 1px solid #0d3b66;
@@ -94,44 +94,44 @@
         }
 
         .date-value {
-            font-size: 9.5pt;
+            font-size: 7.5pt;
             font-weight: bold;
-            padding: 2px;
+            padding: 1px;
         }
 
         .text-main {
             text-align: justify;
-            font-size: 9.5pt;
-            line-height: 1.5;
-            margin-top: 10px;
+            font-size: 7pt;
+            line-height: 1.3;
+            margin-top: 4px;
         }
 
         .monto-letras-centered {
             text-align: center;
-            font-size: 11.5pt;
+            font-size: 8.5pt;
             font-weight: bold;
             border-bottom: 1.5px solid #000;
-            margin: 10px 40px;
-            padding: 2px;
+            margin: 4px 20px;
+            padding: 1px;
             text-transform: uppercase;
         }
 
         .serie-text {
-            font-size: 8.5pt;
+            font-size: 6pt;
             text-align: justify;
-            line-height: 1.3;
-            margin-top: 5px;
+            line-height: 1.2;
+            margin-top: 3px;
             color: #1a1a1a;
         }
 
         .signatures-table {
-            margin-top: 15px;
+            margin-top: 5px;
         }
 
         .signature-cell {
             border: 1px solid #0d3b66;
-            border-radius: 8px; /* Rounded box */
-            height: 140px;
+            border-radius: 5px; /* Rounded box */
+            height: 60px;
             padding: 0;
             vertical-align: top;
             overflow: hidden;
@@ -140,22 +140,22 @@
         .signature-header {
             text-align: center;
             font-weight: bold;
-            font-size: 8.5pt;
+            font-size: 6.5pt;
             border-bottom: 1px solid #0d3b66;
-            padding: 5px;
+            padding: 2px;
             background-color: #f0f4f8;
             color: #0d3b66;
         }
 
         .signature-body {
-            padding: 10px;
-            font-size: 8.5pt;
-            line-height: 1.4;
+            padding: 4px;
+            font-size: 6.5pt;
+            line-height: 1.3;
         }
 
         .firma-box {
             position: absolute;
-            bottom: 15px;
+            bottom: 5px;
             width: 44%;
             text-align: center;
         }
@@ -167,9 +167,9 @@
         }
 
         .firma-label {
-            font-size: 7.5pt;
+            font-size: 6pt;
             font-weight: bold;
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         .page-break {
@@ -218,9 +218,9 @@
                                 <span class="label-header">BUENO POR:</span>
                                 <table style="width: 100%;">
                                     <tr>
-                                        <td style="border: none; width: 25%; font-size: 13pt; font-weight: bold; color: #0d3b66;">$</td>
-                                        <td style="border: none; text-align: right; padding-right: 8px;">
-                                            <span style="font-size: 11.5pt; font-weight: bold;">{{ number_format($pagare['monto'], 2) }}</span>
+                                        <td style="border: none; width: 25%; font-size: 10pt; font-weight: bold; color: #0d3b66;">$</td>
+                                        <td style="border: none; text-align: right; padding-right: 4px;">
+                                            <span style="font-size: 9pt; font-weight: bold;">{{ number_format($pagare['monto'], 2) }}</span>
                                         </td>
                                     </tr>
                                 </table>
@@ -281,7 +281,7 @@
             </div>
         </div>
 
-        @if (($index + 1) % 2 == 0 && ($index + 1) < count($pagares))
+        @if (($index + 1) % 4 == 0 && ($index + 1) < count($pagares))
             <div class="page-break"></div>
         @endif
     @endforeach

@@ -2,19 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Zone;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Venta;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Predio extends Model
 {
-    use HasSpatial, HasFactory;
+    use HasFactory, HasSpatial;
 
     protected $fillable = [
         'clave_catastral',
@@ -33,7 +30,7 @@ class Predio extends Model
         'manzana',
         'area',
         'zona_id',
-        'estado'
+        'estado',
     ];
 
     protected $casts = [
@@ -41,7 +38,9 @@ class Predio extends Model
     ];
 
     const ESTADO_DISPONIBLE = 'disponible';
+
     const ESTADO_PAGANDO = 'pagando';
+
     const ESTADO_PAGADO = 'pagado';
 
     public function zone(): BelongsTo
@@ -57,5 +56,10 @@ class Predio extends Model
     public function ventaActiva()
     {
         return $this->hasOne(Venta::class)->where('estado', 'pagando');
+    }
+
+    public function observaciones(): HasMany
+    {
+        return $this->hasMany(PredioObservacion::class);
     }
 }
