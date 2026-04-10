@@ -118,7 +118,9 @@ class Venta extends Model
         if (!$proximaLetra) {
             // No hay letras pendientes
             $this->proxima_letra_id = null;
-            $this->monto_restante_letra = 0;
+            //$this->monto_restante_letra = 0;
+            $this->saldo_venta = 0;
+            $this->estado = "pagado";
             $this->save();
             return;
         }
