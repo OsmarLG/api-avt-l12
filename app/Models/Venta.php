@@ -118,12 +118,15 @@ class Venta extends Model
         if (!$proximaLetra) {
             // No hay letras pendientes
             $this->proxima_letra_id = null;
-            $this->monto_restante_letra = 0;
+            //$this->monto_restante_letra = 0;
+            $this->saldo_venta = 0;
+            $this->estado = "pagado";
             $this->save();
             return;
         }
 
         $this->proxima_letra_id = $proximaLetra->id;
+        $this->saldo_venta = $this->letras()->where('estado', 'pendiente')->sum('saldo');
         $this->save();
     }
 

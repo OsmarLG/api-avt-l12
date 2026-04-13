@@ -14,7 +14,7 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
+        $query = Venta::query()->with(['comprador','comprador.phones', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
 
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
@@ -84,7 +84,7 @@ class VentaService
             $fechaVenta = now()->format('d/m/Y');
             PredioObservacion::create([
                 'predio_id' => $venta->predio_id,
-                'observacion' => "Venta creada el {$fechaVenta} con folio LG-{$venta->folio}",
+                'observacion' => "Venta creada el {$fechaVenta} con folio {$venta->folio}",
             ]);
 
             return $venta->load(['comprador', 'aval', 'predio', 'user', 'files']);
@@ -117,38 +117,57 @@ class VentaService
             $fechaCancelacion = now()->format('d/m/Y');
             PredioObservacion::create([
                 'predio_id' => $venta->predio_id,
-                'observacion' => "Venta con folio LG-{$venta->folio} cancelada el {$fechaCancelacion}. Motivo: {$comment}",
+                'observacion' => "Venta con folio {$venta->folio} cancelada el {$fechaCancelacion}. Motivo: {$comment}",
             ]);
 
             return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
         });
     }
 
-    public function cambiarComprador(Venta $venta, int $compradorId, ?int $avalId): Venta
+    public function cambiarComprador(Venta $venta, ?int $compradorId, ?int $avalId): Venta
     {
         return DB::transaction(function () use ($venta, $compradorId, $avalId) {
-            /** @var Person $compradorAnterior */
+            /** @var Person|null $compradorAnterior */
             $compradorAnterior = $venta->comprador;
+            /** @var Person|null $avalAnterior */
+            $avalAnterior = $venta->aval;
 
-            $updateData = ['person_id' => $compradorId];
+            $updateData = [];
+
+            if ($compradorId !== null) {
+                $updateData['person_id'] = $compradorId;
+            }
 
             if ($avalId !== null) {
                 $updateData['aval_id'] = $avalId;
             }
 
             $venta->update($updateData);
-            $venta->refresh();
+            $ventaActualizada = $venta->fresh();
 
-            /** @var Person $compradorNuevo */
-            $compradorNuevo = $venta->fresh()->comprador;
+            if ($compradorId !== null) {
+                /** @var Person $compradorNuevo */
+                $compradorNuevo = $ventaActualizada->comprador;
+                $nombreAnterior = $compradorAnterior?->fullname ?? 'Sin comprador';
 
-            // Crear observación del cambio de propietario
-            PredioObservacion::create([
-                'predio_id' => $venta->predio_id,
-                'observacion' => "Cambio de propietario de {$compradorAnterior->fullname} a {$compradorNuevo->fullname}",
-            ]);
+                PredioObservacion::create([
+                    'predio_id' => $venta->predio_id,
+                    'observacion' => "Cambio de comprador de \"{$nombreAnterior}\" a \"{$compradorNuevo->fullname}\".",
+                ]);
+            }
 
-            return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
+            if ($avalId !== null) {
+                /** @var Person $avalNuevo */
+                $avalNuevo = $ventaActualizada->aval;
+                $nombreAvalAnterior = $avalAnterior?->fullname ?? 'Sin aval';
+
+                PredioObservacion::create([
+                    'predio_id' => $venta->predio_id,
+                    'observacion' => "Cambio de aval de \"{$nombreAvalAnterior}\" a \"{$avalNuevo->fullname}\".",
+                ]);
+            }
+
+            return $ventaActualizada->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
         });
     }
 

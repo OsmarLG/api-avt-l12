@@ -14,8 +14,8 @@ class CambiarCompradorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'comprador_id' => ['required', 'exists:people,id'],
-            'aval_id' => ['nullable', 'exists:people,id'],
+            'comprador_id' => ['nullable', 'required_without:aval_id', 'exists:people,id'],
+            'aval_id' => ['nullable', 'required_without:comprador_id', 'exists:people,id'],
         ];
     }
 }

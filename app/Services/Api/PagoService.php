@@ -14,8 +14,29 @@ class PagoService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Pago::query()->with(['person', 'user', 'cancelledBy']);
+        $query = $this->applyFilters(Pago::query()->with(['person', 'user', 'cancelledBy']), $filters);
 
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+
+        // Get the last pago_id from filtered results
+        $lastPagoId = $this->applyFilters(Pago::query(), $filters)
+            ->orderBy("id", "desc")
+            ->where("estado", "activo")
+            ->value('id');
+
+        $paginator = $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
+
+        $paginator->last_pago_id = $lastPagoId;
+
+        return $paginator;
+    }
+
+    private function applyFilters($query, array $filters)
+    {
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
         }
@@ -26,12 +47,38 @@ class PagoService
             });
         }
 
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortDir = $filters['sort_dir'] ?? 'desc';
+        return $query;
+    }
 
-        return $query->orderBy($sortBy, $sortDir)
-            ->paginate($filters['per_page'] ?? 10)
-            ->withQueryString();
+    public function filter(array $filters): array
+    {
+        $query = Pago::query()->with(['ticket']);
+
+        if (!empty($filters['person_id'])) {
+            $query->where('person_id', $filters['person_id']);
+        }
+
+        if (!empty($filters['venta_id'])) {
+            $query->whereHas('abonos.letra', function ($q) use ($filters) {
+                $q->where('venta_id', $filters['venta_id']);
+            });
+        }
+
+        if (!empty($filters['zone_id'])) {
+            $query->whereHas('abonos.letra.venta.predio', function ($q) use ($filters) {
+                $q->where('zona_id', $filters['zone_id']);
+            });
+        }
+
+        if (!empty($filters['fecha_inicial'])) {
+            $query->whereDate('created_at', '>=', $filters['fecha_inicial']);
+        }
+
+        if (!empty($filters['fecha_final'])) {
+            $query->whereDate('created_at', '<=', $filters['fecha_final']);
+        }
+
+        return $query->orderBy('id', 'desc')->get()->all();
     }
 
     public function find(Pago $pago): Pago
@@ -107,9 +154,23 @@ class PagoService
         $pago = Pago::query()
             ->with(['person', 'user', 'abonos.letra'])
             ->findOrFail($pagoId);
+        $venta = null;
+        $zona = null;
+        if ($pago->abonos->isNotEmpty()) {
+            $venta = $pago->abonos->first()->letra->venta;
+            $venta->load([
+                'comprador',
+                'aval',
+                'predio.zone',
+                'proximaLetra'
+            ]);
+            $zona = $venta->predio->zone ?? null;
+        }
 
         $ticketJson = json_encode([
+            "zona" => $zona,
             'pago' => $pago->toArray(),
+            "venta" => $venta?->toArray(),
             'abonos' => $pago->abonos->map(function (Abono $abono) {
                 return [
                     'id' => $abono->id,

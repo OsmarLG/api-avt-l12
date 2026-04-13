@@ -28,6 +28,7 @@ class PagoController extends Controller
             'items' => PagoResource::collection($paginator),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
+                'last_pago_id' => $paginator->last_pago_id,
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
@@ -75,5 +76,18 @@ class PagoController extends Controller
             new PagoResource($pago),
             'Pago cancelado correctamente'
         );
+    }
+
+    /**
+     * Filter payments without pagination.
+     */
+    public function pagosFilterWithoutPagination(Request $request)
+    {
+        $pagos = $this->service->filter($request->all());
+
+        return ApiResponse::ok([
+            'items' => PagoResource::collection($pagos),
+            'total' => count($pagos),
+        ]);
     }
 }
