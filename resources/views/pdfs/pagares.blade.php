@@ -20,16 +20,15 @@
         }
 
         .pagare-wrapper {
-            padding: 2px;
-            margin-bottom: 6px;
+            padding: 0;
+            margin-bottom: 4px;
             page-break-inside: avoid;
         }
 
         .pagare-container {
-            border: 4px double #0d3b66; /* Blue ornate border */
+            border: 4px double #0d3b66;
             border-radius: 8px;
-            padding: 5px;
-            height: 228px;
+            padding: 4px;
             position: relative;
             background-color: #fff;
         }
@@ -37,8 +36,7 @@
         .inner-content {
             border: 1px solid #0d3b66;
             border-radius: 6px;
-            padding: 6px;
-            height: 215px;
+            padding: 5px;
         }
 
         table {
@@ -125,13 +123,12 @@
         }
 
         .signatures-table {
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .signature-cell {
             border: 1px solid #0d3b66;
-            border-radius: 5px; /* Rounded box */
-            height: 60px;
+            border-radius: 5px;
             padding: 0;
             vertical-align: top;
             overflow: hidden;
