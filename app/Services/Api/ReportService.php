@@ -40,10 +40,13 @@ class ReportService
                 
                 // Formatear pagos: "1, 2 | 24"
                 $letrasNumeros = $abonosVenta->map(function ($a) {
-                    $desc = $a->letra->descripcion;
-                    // Extraer número de "Letra 1/24"
-                    preg_match('/Letra\s+(\d+)\//', $desc, $matches);
-                    return $matches[1] ?? $a->letra->consecutivo;
+                    if($a->letra->descripcion == "ANTICIPO"){
+                        return "ANT";
+                    }else {
+                        // Extraer número de "Letra 1/24"
+                        preg_match('/Letra\s+(\d+)\//', $a->letra->descripcion, $matches);
+                        return $matches[1] ?? $a->letra->consecutivo;
+                    }
                 })->sort()->unique()->implode(', ');
 
                 $totalLetras = 0;
@@ -107,8 +110,13 @@ class ReportService
             $predio = $venta->predio;
             
             $letrasNumeros = $abonosVenta->map(function ($a) {
-                preg_match('/Letra\s+(\d+)\//', $a->letra->descripcion, $matches);
-                return $matches[1] ?? $a->letra->consecutivo;
+                if($a->letra->descripcion == "ANTICIPO"){
+                    return "ANT";
+                }else {
+                    // Extraer número de "Letra 1/24"
+                    preg_match('/Letra\s+(\d+)\//', $a->letra->descripcion, $matches);
+                    return $matches[1] ?? $a->letra->consecutivo;
+                }
             })->sort()->unique()->implode(', ');
 
             $totalLetras = 0;
