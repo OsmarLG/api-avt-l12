@@ -63,6 +63,9 @@ class PagareService
         $path = "ventas/{$venta->id}/{$fileName}";
         $disk = 'public';
 
+        // Eliminar registros anteriores de pagarés (el archivo en disco se sobreescribe con put)
+        $venta->files()->where('tipo', 'pagares')->delete();
+
         Storage::disk($disk)->put($path, $pdf->output());
 
         return $venta->files()->create([
@@ -74,7 +77,7 @@ class PagareService
             'mime_type' => 'application/pdf',
             'size' => Storage::disk($disk)->size($path),
             'visibility' => 'public',
-            "tipo" => "pagares"
+            'tipo' => 'pagares',
         ]);
     }
 }

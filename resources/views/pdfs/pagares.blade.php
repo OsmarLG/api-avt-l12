@@ -10,7 +10,7 @@
             size: legal portrait;
         }
 
-        body {
+        html, body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 7pt;
             line-height: 1.2;
@@ -20,41 +20,33 @@
         }
 
         /*
-         * Hoja legal portrait: 35.56cm de alto
-         * Márgenes @page: 0.4cm top + 0.4cm bottom = 0.8cm
-         * Disponible: 34.76cm
-         * 4 pagarés + 3 separaciones de 0.1cm = 0.3cm
-         * Cada wrapper: (34.76 - 0.3) / 4 = 8.615cm → usamos 8.6cm
+         * Legal portrait: 35.56cm alto
+         * Margenes @page: 0.4cm × 2 = 0.8cm → disponible: 34.76cm
+         * 4 pagarés × 8.5cm = 34.0cm
+         * 3 gaps × 0.1cm   =  0.3cm
+         * Total usada      = 34.3cm → 0.46cm de margen libre (seguro)
+         *
+         * NOTA: NO usar calc(), height:100%, :last-child, box-sizing
+         *       (limitaciones de DomPDF)
          */
         .pagare-wrapper {
-            height: 8.6cm;
+            height: 8.5cm;
             overflow: hidden;
             margin-bottom: 0.1cm;
-            page-break-inside: avoid;
-            box-sizing: border-box;
-        }
-
-        .pagare-wrapper:last-child {
-            margin-bottom: 0;
         }
 
         .pagare-container {
             border: 4px double #0d3b66;
             border-radius: 8px;
             padding: 4px;
-            height: 100%;
             position: relative;
             background-color: #fff;
-            box-sizing: border-box;
         }
 
         .inner-content {
             border: 1px solid #0d3b66;
             border-radius: 6px;
             padding: 5px;
-            height: calc(100% - 10px);
-            box-sizing: border-box;
-            overflow: hidden;
         }
 
         table {
@@ -69,7 +61,6 @@
             padding: 0;
         }
 
-        /* Rounded corners for top header cells */
         .table-blue tr:first-child td:first-child { border-top-left-radius: 6px; }
         .table-blue tr:first-child td:last-child { border-top-right-radius: 6px; }
 
@@ -186,20 +177,19 @@
             font-weight: bold;
             margin-top: 1px;
         }
-
-        .page-group {
-            page-break-after: always;
-        }
-
-        .page-group:last-child {
-            page-break-after: auto;
-        }
     </style>
 </head>
 
 <body>
-    @foreach ($pagares->chunk(4) as $grupo)
-        <div class="page-group">
+    {{--
+        chunk(4) agrupa los pagarés de 4 en 4.
+        page-break-before: always al inicio de cada grupo (excepto el primero)
+        garantiza que DomPDF empiece en página nueva ANTES de renderizar el grupo,
+        no después de detectar overflow.
+        Sin page-break-inside: avoid para no interferir con el layout.
+    --}}
+    @foreach ($pagares->chunk(4) as $grupoIndex => $grupo)
+        <div style="{{ $grupoIndex > 0 ? 'page-break-before: always;' : '' }}">
             @foreach ($grupo as $pagare)
                 <div class="pagare-wrapper">
                     <div class="pagare-container">
