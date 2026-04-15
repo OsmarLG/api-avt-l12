@@ -262,10 +262,10 @@
                                     <td class="signature-cell" style="width: 48%;">
                                         <div class="signature-header">NOMBRE Y DIRECCIÓN DEL DEUDOR</div>
                                         <div class="signature-body">
-                                            {{ strtoupper($venta->comprador->full_name) }}<br>
-                                            {{ strtoupper($venta->comprador->calle) }} {{ $venta->comprador->numero_exterior }}, COL. {{ strtoupper($venta->comprador->colonia) }}<br>
-                                            {{ strtoupper($venta->comprador->localidad_domicilio ?? 'LA PAZ, B.C.S.') }}, C.P. {{ $venta->comprador->codigo_postal }}<br>
-                                            TEL: {{ $venta->comprador->phones->first()->number ?? 'N/A' }}
+                                            {{ strtoupper($venta?->comprador->full_name) }}<br>
+                                            {{ strtoupper($venta?->comprador->calle) }} {{ $venta->comprador->numero_exterior }}, COL. {{ strtoupper($venta->comprador->colonia) }}<br>
+                                            {{ strtoupper($venta?->comprador->localidad_domicilio ?? 'LA PAZ, B.C.S.') }}, C.P. {{ $venta->comprador->codigo_postal }}<br>
+                                            TEL: {{ $venta?->comprador?->phones?->first()?->number ?? 'N/A' }}
                                         </div>
                                         <div class="firma-box" style="left: 12px;">
                                             <div class="firma-line"></div>
@@ -279,7 +279,7 @@
                                             {{ strtoupper($venta->aval->full_name ?? 'N/A') }}<br>
                                             {{ strtoupper($venta->aval->calle ?? '') }} {{ $venta->aval->numero_exterior ?? '' }}, COL. {{ strtoupper($venta->aval->colonia ?? '') }}<br>
                                             {{ strtoupper($venta->aval->localidad_domicilio ?? 'LA PAZ, B.C.S.') }}, C.P. {{ $venta->aval->codigo_postal ?? '' }}<br>
-                                            TEL: {{ $venta->aval->phones->first()->number ?? 'N/A' }}
+                                            TEL: {{ $venta?->aval?->phones?->first()?->number ?? 'N/A' }}
                                         </div>
                                         <div class="firma-box" style="right: 12px;">
                                             <div class="firma-line"></div>

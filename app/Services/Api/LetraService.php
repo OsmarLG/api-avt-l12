@@ -22,7 +22,7 @@ class LetraService
         $sortBy = $filters['sort_by'] ?? 'fecha_vencimiento';
         $sortDir = $filters['sort_dir'] ?? 'asc';
 
-        return $query->orderBy($sortBy, $sortDir)
+        return $query->orderBy("id", $sortDir)
             ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
     }

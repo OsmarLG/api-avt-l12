@@ -30,6 +30,9 @@ class Venta extends Model
         'id_cancelo',
         'comentario_cancelacion',
         'folio',
+        "created_at",
+        "updated_at",
+        "saldo_venta",
     ];
 
     protected $casts = [

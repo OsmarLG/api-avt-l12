@@ -5,8 +5,11 @@ namespace Database\Seeders;
 use App\Models\Person;
 use App\Models\Predio;
 use App\Models\Venta;
+use App\Models\Zone;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PadronSanFranciscoSeeder extends Seeder
 {
@@ -883,35 +886,76 @@ class PadronSanFranciscoSeeder extends Seeder
 
         ];
 
-        foreach ($padronSanFrancisco as $row) {
+        DB::transaction(function () use ($padronSanFrancisco) {
+            $zone = Zone::firstOrCreate([
+                "nombre" => "San Francisco",
+                "dueno_nombre" => "Dueno san francisco",
+            ]);
+            foreach ($padronSanFrancisco as $row) {
 
-            $persona = $this->createPerson($row["comprador"], $row["telefono"]);
-            $predio = $this->createPredio($row);
-            
-                Venta::create([
-                    "contrato" => $row["contrato"],
+                $persona = $this->createPerson($row["comprador"], $row["telefono"]);
+                $predio = $this->createPredio($row,  $zone);
+
+                if ($row["comprador"] == null) {
+                    continue;
+                }
+                if (preg_match('/^cancelado$/i', $row["comprador"])) {
+                    continue;
+                }
+
+                $venta = Venta::create([
+                    "folio" => $row["contrato"],
                     "person_id" => $persona->id,
                     "predio_id" => $predio->id,
+                    "created_at" => $row["fecha_contratacion"],
+                    "costo_lote" => $row["cantidad_total"],
+                    "enganche" => $row["anticipo"],
+                    "meses_a_pagar" => $row["letras"],
+                    "saldo_venta" => $row["saldo"] ?? 0,
+                    "estado" => $row["saldo"] == 0 ? "pagado" : "pagando",
+                    "user_id" => 1,
+                    "metodo_pago" => "meses",
                 ]);
-          
-        }
+
+                $this->createLetras($venta, $row);
+            }
+            $this->command->info("Registros insertadost");
+        });
     }
 
-    public function validateCreateVenta($row){
+    public function validateCreateVenta($row)
+    {
         if (preg_match('/^cancelado$/i', $row["comprador"])) {
             return false;
         }
         return true;
     }
 
-    public function createPredio($row){
+    public function createPredio($row, $zone)
+    {
+        $estado = "";
+
+        if ($row["comprador"] == null) {
+            $estado = "disponible";
+        }
+
+        if ($row["saldo"] == 0 || $row["saldo"] == null) {
+            $estado = "pagado";
+        }
+
+        if ($row["saldo"] > 0) {
+            $estado = "pagando";
+        }
+
         $predio = Predio::create([
             "manzana" => $row["manzana"],
             "lote" => $row["L"],
             "sup_terr" => $row["m2"],
+            "zona_id" => $zone->id,
+            "estado" => $estado,
         ]);
 
-        if(preg_match('/^cancelado$/i', $row["comprador"])){
+        if (preg_match('/^cancelado$/i', $row["comprador"])) {
             $predio->observaciones()->create([
                 "observacion" => "Cancelado",
             ]);
@@ -919,8 +963,12 @@ class PadronSanFranciscoSeeder extends Seeder
 
         return $predio;
     }
+
     public function createPerson($name, $telefono)
     {
+        if ($name == null) {
+            return null;
+        }
         $nombre = "";
         $apellido_paterno = "";
         $apellido_materno = "";
@@ -929,6 +977,10 @@ class PadronSanFranciscoSeeder extends Seeder
             $nombre = "Maria de la Cruz";
             $apellido_paterno = "Garcia";
             $apellido_materno = "Flores";
+        } else if ($name == "Manuel de la Cruz Aragon Montaño") {
+            $nombre = "Manuel de la Cruz";
+            $apellido_paterno = "Aragon";
+            $apellido_materno = "Montaño";
         } else {
             $array = preg_split('/\s+/', trim($name));
 
@@ -948,19 +1000,71 @@ class PadronSanFranciscoSeeder extends Seeder
             }
         }
 
-        $persona = Person::create([
-            "nombres" => $nombre,
-            "apellido_paterno" => $apellido_paterno,
-            "apellido_materno" => $apellido_materno,
-        ]);
+        $persona_existente = Person::where("nombres", $nombre)->where("apellido_paterno", $apellido_paterno)->where("apellido_materno", $apellido_materno)->first();
+        $persona = null;
 
-        if ($telefono) {
-            $persona->phones()->create([
-                "number" => $telefono,
-                "type" => "celular",
+        if ($persona_existente) {
+            $persona = $persona_existente;
+        } else {
+            $persona = Person::create([
+                "nombres" => $nombre,
+                "apellido_paterno" => $apellido_paterno,
+                "apellido_materno" => $apellido_materno,
             ]);
+
+            if ($telefono) {
+                $persona->phones()->create([
+                    "number" => $telefono,
+                    "type" => "celular",
+                ]);
+            }
         }
 
         return $persona;
+    }
+
+    public function createLetras($venta, $row)
+    {
+        $monto_por_letra = ($row["cantidad_total"] - $row["anticipo"]) / $row["letras"];
+        $saldo_anticipo = $row["cantidad_pagada"] > $row["anticipo"] ? 0 : $row["anticipo"] - $row["cantidad_pagada"];
+
+        $venta->letras()->create([
+            "descripcion" => "Anticipo",
+            "monto" => $row["anticipo"] ?? 0,
+            "saldo" => $saldo_anticipo ?? 0,
+            "consecutivo" => 0,
+            "tipo" => "anticipo",
+            "estado" =>   $saldo_anticipo == 0 ? "pagado" : "pendiente",
+            "fecha_vencimiento" => $row["fecha_contratacion"],
+        ]);
+
+        for ($i = 0; $i < $row["letras"]; $i++) {
+            if ($row["Letras pagadas"] > $i) {
+                $fecha = Carbon::createFromFormat('Y-d-m', $row["fecha_contratacion"]);
+                $venta->letras()->create([
+                    "descripcion" => "Letra " . ($i + 1),
+                    "monto" => $monto_por_letra,
+                    "saldo" => 0,
+                    "consecutivo" => $i + 1,
+                    "tipo" => "letra",
+                    "estado" => "pagado",
+                    "fecha_vencimiento" =>  $fecha->addMonths($i + 1),
+                ]);
+            } else {
+                $letra = $venta->letras()->create([
+                    "descripcion" => "Letra " . ($i + 1),
+                    "monto" => $monto_por_letra,
+                    "saldo" => $monto_por_letra,
+                    "consecutivo" => $i + 1,
+                    "tipo" => "letra",
+                    "estado" => "pendiente",
+                    "fecha_vencimiento" =>  $fecha->addMonths($i + 1),
+                ]);
+                if (($i + 1) === $row["Letras pagadas"] + 1) {
+                    $venta->proxima_letra_id = $letra->id;
+                    $venta->save();
+                }
+            }
+        }
     }
 }
