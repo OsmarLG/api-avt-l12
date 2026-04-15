@@ -31,6 +31,7 @@ class Predio extends Model
         'area',
         'zona_id',
         'estado',
+        'lote',
     ];
 
     protected $casts = [
