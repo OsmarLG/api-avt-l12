@@ -899,7 +899,7 @@ class PadronSanFranciscoSeeder extends Seeder
                 if ($row["comprador"] == null) {
                     continue;
                 }
-                if (preg_match('/^cancelado$/i', $row["comprador"])) {
+                if (preg_match('/cancelado/i', $row["comprador"])) {
                     continue;
                 }
 
@@ -981,7 +981,12 @@ class PadronSanFranciscoSeeder extends Seeder
             $nombre = "Manuel de la Cruz";
             $apellido_paterno = "Aragon";
             $apellido_materno = "Montaño";
-        } else {
+        }else if ($name == "Aranza de Jesus Romero Arellano"){
+            $nombre = "Aranza de Jesus";
+            $apellido_paterno = "Romero";
+            $apellido_materno = "Arellano";
+        } 
+        else {
             $array = preg_split('/\s+/', trim($name));
 
             if (count($array) == 2) {
