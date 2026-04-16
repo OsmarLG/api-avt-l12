@@ -34,7 +34,7 @@ class VentaService
             });
         }
 
-        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortBy = $filters['sort_by'] ?? 'id';
         $sortDir = $filters['sort_dir'] ?? 'desc';
 
         return $query->orderBy($sortBy, $sortDir)

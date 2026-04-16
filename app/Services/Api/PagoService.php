@@ -58,6 +58,10 @@ class PagoService
             $query->where('person_id', $filters['person_id']);
         }
 
+        if (!empty($filters['pago_id'])) {
+            $query->where('id', $filters['pago_id']);
+        }
+
         if (!empty($filters['venta_id'])) {
             $query->whereHas('abonos.letra', function ($q) use ($filters) {
                 $q->where('venta_id', $filters['venta_id']);
