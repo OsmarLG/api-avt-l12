@@ -955,9 +955,13 @@ class PadronSanFranciscoSeeder extends Seeder
             "estado" => $estado,
         ]);
 
-        if (preg_match('/^cancelado$/i', $row["comprador"])) {
+        if (preg_match('/cancelado/i', $row["comprador"])) {
             $predio->observaciones()->create([
-                "observacion" => "Cancelado",
+                "observacion" => "predio creado por migracion, el dia (venta cancelada) ".now()->format('d/m/Y')." cancelado",
+            ]);
+        }else {
+            $predio->observaciones()->create([
+                "observacion" => "predio creado por migracion, el dia ".now()->format('d/m/Y'),
             ]);
         }
 
