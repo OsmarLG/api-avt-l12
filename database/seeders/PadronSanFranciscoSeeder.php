@@ -957,11 +957,11 @@ class PadronSanFranciscoSeeder extends Seeder
 
         if (preg_match('/cancelado/i', $row["comprador"])) {
             $predio->observaciones()->create([
-                "observacion" => "predio creado por migracion, el dia (venta cancelada) ".now()->format('d/m/Y')." cancelado",
+                "observacion" => "predio creado por migracion, el dia (venta cancelada) " . now()->format('d/m/Y') . " cancelado",
             ]);
-        }else {
+        } else {
             $predio->observaciones()->create([
-                "observacion" => "predio creado por migracion, el dia ".now()->format('d/m/Y'),
+                "observacion" => "predio creado por migracion, el dia " . now()->format('d/m/Y'),
             ]);
         }
 
@@ -985,12 +985,11 @@ class PadronSanFranciscoSeeder extends Seeder
             $nombre = "Manuel de la Cruz";
             $apellido_paterno = "Aragon";
             $apellido_materno = "Montaño";
-        }else if ($name == "Aranza de Jesus Romero Arellano"){
+        } else if ($name == "Aranza de Jesus Romero Arellano") {
             $nombre = "Aranza de Jesus";
             $apellido_paterno = "Romero";
             $apellido_materno = "Arellano";
-        } 
-        else {
+        } else {
             $array = preg_split('/\s+/', trim($name));
 
             if (count($array) == 2) {
@@ -1046,10 +1045,13 @@ class PadronSanFranciscoSeeder extends Seeder
             "estado" =>   $saldo_anticipo == 0 ? "pagado" : "pendiente",
             "fecha_vencimiento" => $row["fecha_contratacion"],
         ]);
+        $fechaBase = $row["fecha_contratacion"]
+            ? Carbon::parse($row["fecha_contratacion"])
+            : now();
 
         for ($i = 0; $i < $row["letras"]; $i++) {
+            $fecha = $fechaBase->copy()->addMonths($i);
             if ($row["Letras pagadas"] > $i) {
-                $fecha = Carbon::createFromFormat('Y-m-d', $row["fecha_contratacion"]);
                 $venta->letras()->create([
                     "descripcion" => "Letra " . ($i + 1),
                     "monto" => $monto_por_letra,
@@ -1057,7 +1059,7 @@ class PadronSanFranciscoSeeder extends Seeder
                     "consecutivo" => $i + 1,
                     "tipo" => "letra",
                     "estado" => "pagado",
-                    "fecha_vencimiento" =>  $fecha->addMonths($i + 1),
+                    "fecha_vencimiento" =>  $fecha,
                 ]);
             } else {
                 $letra = $venta->letras()->create([
@@ -1067,7 +1069,7 @@ class PadronSanFranciscoSeeder extends Seeder
                     "consecutivo" => $i + 1,
                     "tipo" => "letra",
                     "estado" => "pendiente",
-                    "fecha_vencimiento" =>  $fecha->addMonths($i + 1),
+                    "fecha_vencimiento" =>  $fecha,
                 ]);
                 if (($i + 1) === $row["Letras pagadas"] + 1) {
                     $venta->proxima_letra_id = $letra->id;
