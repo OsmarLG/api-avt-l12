@@ -83,7 +83,7 @@ class PagoController extends Controller
      */
     public function pagosFilterWithoutPagination(Request $request)
     {
-        $pagos = $this->service->filter($request->all());
+        $pagos = $this->service->filterForPagosDuenos($request->all());
 
         return ApiResponse::ok([
             'items' => PagoResource::collection($pagos),

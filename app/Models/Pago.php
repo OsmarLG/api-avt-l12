@@ -26,6 +26,9 @@ class Pago extends Model
         'fecha_pago',
         'user_id',
         'metodo_pago',
+        'fecha_pago_dueno',
+        'folio_dueno',
+        'reimpresion_ticket_dueno',
     ];
 
     protected $casts = [
@@ -33,6 +36,7 @@ class Pago extends Model
         'recibi' => 'decimal:2',
         'cambio' => 'decimal:2',
         'fecha_pago' => 'date',
+        'fecha_pago_dueno' => 'date',
     ];
 
     public function person(): BelongsTo

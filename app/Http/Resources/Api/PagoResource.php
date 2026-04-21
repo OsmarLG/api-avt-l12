@@ -27,6 +27,9 @@ class PagoResource extends JsonResource
             'updated_at' => optional($this->updated_at)->toISOString(),
             'abonos' => AbonoResource::collection($this->whenLoaded('abonos')),
             'ticket' => $this->whenLoaded('ticket'),
+            'fecha_pago_dueno' => $this->fecha_pago_dueno,
+            'folio_dueno' => $this->folio_dueno,
+            'reimpresion_ticket_dueno' => $this->reimpresion_ticket_dueno,
         ];
     }
 }

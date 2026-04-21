@@ -41,23 +41,6 @@ class PagoService
             $query->where('person_id', $filters['person_id']);
         }
 
-        if (!empty($filters['venta_id'])) {
-            $query->whereHas('abonos.letra', function ($q) use ($filters) {
-                $q->where('venta_id', $filters['venta_id']);
-            });
-        }
-
-        return $query;
-    }
-
-    public function filter(array $filters): array
-    {
-        $query = Pago::query()->with(['ticket']);
-
-        if (!empty($filters['person_id'])) {
-            $query->where('person_id', $filters['person_id']);
-        }
-
         if (!empty($filters['pago_id'])) {
             $query->where('id', $filters['pago_id']);
         }
@@ -82,7 +65,33 @@ class PagoService
             $query->whereDate('created_at', '<=', $filters['fecha_final']);
         }
 
-        return $query->orderBy('id', 'desc')->get()->all();
+
+        return $query;
+    }
+
+    public function filterForPagosDuenos(array $filters)
+    {
+        $query = Pago::query()->with(['ticket']);
+        $this->applyFilters($query, $filters);
+        $queryPagosDuenosPrimeraVez = clone $query;
+        $queryPagosDuenosReimpresion = clone $query;
+
+        $queryPagosDuenosPrimeraVez
+            ->whereNull('fecha_pago_dueno')
+            ->get()
+            ->each(function ($pago) {
+                $pago->update([
+                    'fecha_pago_dueno' => now(),
+                    'folio_dueno' => 'PD-' . Str::upper(Str::random(4)),
+                    'reimpresion_ticket_dueno' => false,
+                ]);
+            });
+
+        $queryPagosDuenosReimpresion
+            ->where("fecha_pago_dueno", "!=", null)
+            ->update(['reimpresion_ticket_dueno' => true]);
+
+        return $query->orderBy('id', 'desc')->get();
     }
 
     public function find(Pago $pago): Pago
