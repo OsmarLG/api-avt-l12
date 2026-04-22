@@ -38,6 +38,11 @@ class Letra extends Model
         return $this->hasMany(Abono::class);
     }
 
+    public function interes(): HasMany
+    {
+        return $this->hasMany(LetraInteres::class);
+    }
+
     public function montoRestante(): float
     {
         $totalAbonado = $this->abonos()

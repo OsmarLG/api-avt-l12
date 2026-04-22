@@ -33,6 +33,9 @@ class Venta extends Model
         "created_at",
         "updated_at",
         "saldo_venta",
+        "intereses_activo",
+        "intereses_porcentaje",
+        "intereses_dias_tregua",
     ];
 
     protected $casts = [
