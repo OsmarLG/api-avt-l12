@@ -51,4 +51,5 @@ class Letra extends Model
 
         return max($this->monto - $totalAbonado, 0);
     }
+
 }

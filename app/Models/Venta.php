@@ -140,4 +140,12 @@ class Venta extends Model
     {
         return $this->letras()->where('estado', 'pendiente')->get();
     }
+
+    public function letrasVencidas()
+    {
+        return $this->letras()->where('estado', 'pendiente')
+        ->where('fecha_vencimiento', '<', now())
+        ->orderBy('fecha_vencimiento', 'desc')
+        ->get();
+    }
 }

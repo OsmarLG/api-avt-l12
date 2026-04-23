@@ -14,7 +14,7 @@ class VentaService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Venta::query()->with(['comprador','comprador.phones', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
+        $query = Venta::query()->with(['comprador', 'comprador.phones', 'predio', 'predio.zone', 'user', 'proximaLetra', 'files']);
 
         if (! empty($filters['person_id'])) {
             $query->where('person_id', $filters['person_id']);
@@ -30,7 +30,7 @@ class VentaService
 
         if (! empty($filters['comprador_nombre'])) {
             $query->whereHas('comprador', function ($q) use ($filters) {
-                $q->where('fullname', 'like', $filters['comprador_nombre'].'%');
+                $q->where('fullname', 'like', $filters['comprador_nombre'] . '%');
             });
         }
 
@@ -187,5 +187,26 @@ class VentaService
             ]);
             $fecha->addMonth();
         }
+    }
+
+    public function detalleInteresMoratorio(Venta $venta): array
+    {
+        $detalle = [];
+        $detalle['intereses_activo'] = $venta->intereses_activo;
+        $detalle['intereses_porcentaje'] = $venta->intereses_porcentaje;
+        $detalle['intereses_dias_tregua'] = $venta->intereses_dias_tregua;
+        $letrasVencidas = $venta->letrasVencidas();
+        $diasVencidos = $letrasVencidas->first()->fecha_vencimiento->diffInDays(now());
+        $primerVencimiento = $letrasVencidas->first()->fecha_vencimiento;
+        $mensualidad = $letrasVencidas->first()->monto;
+        $interesPorDia = $letrasVencidas->first()->monto * ($venta->interes_porcentaje / 100) / 30;
+        $interesPorMes = $interesPorDia * 30;
+
+        $totalIntereses = DB::table("letras_intereses")
+        ->whereIn("letra_id", $letrasVencidas->pluck("id"))
+        ->sum("monto_neto");
+
+        
+        return $detalle;
     }
 }

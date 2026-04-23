@@ -113,4 +113,10 @@ class VentaController extends Controller
             'Comprador actualizado correctamente'
         );
     }
+
+    public function detalleInteresMoratorio(Venta $venta)
+    {
+        $detalle = $this->service->detalleInteresMoratorio($venta);
+        return ApiResponse::ok($detalle, 'Detalle de intereses moratorio');
+    }
 }

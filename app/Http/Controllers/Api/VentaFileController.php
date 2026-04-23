@@ -55,4 +55,5 @@ class VentaFileController extends Controller
 
         return ApiResponse::ok(null, 'Archivo eliminado correctamente');
     }
+
 }
