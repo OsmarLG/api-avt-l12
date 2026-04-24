@@ -64,6 +64,8 @@ class VentaController extends Controller
      */
     public function show(Venta $venta)
     {
+        
+        $venta->calcularIntereses();
         return ApiResponse::ok(new VentaResource($this->service->find($venta)));
     }
 
@@ -114,6 +116,11 @@ class VentaController extends Controller
         );
     }
 
+    /**
+     * See the details of the interest moratorium.
+     *
+     * 
+     */
     public function detalleInteresMoratorio(Venta $venta)
     {
         $detalle = $this->service->detalleInteresMoratorio($venta);

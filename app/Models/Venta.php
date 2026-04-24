@@ -144,8 +144,31 @@ class Venta extends Model
     public function letrasVencidas()
     {
         return $this->letras()->where('estado', 'pendiente')
-        ->where('fecha_vencimiento', '<', now())
-        ->orderBy('fecha_vencimiento', 'desc')
-        ->get();
+            ->where('fecha_vencimiento', '<', now())
+            ->orderBy('fecha_vencimiento', 'asc');
+    }
+
+    public function getTotalIntereses()
+    {
+        return DB::table("letras_intereses")
+            ->whereIn("letra_id", $this->letrasVencidas()->pluck("id"))
+            ->sum("monto_neto");
+    }
+
+    public function calcularIntereses()
+    {
+        $letras = $this->letrasVencidas()->get();
+
+        if ($letras->isEmpty()) {
+            return;
+        }
+
+        $letras->each(function (Letra $letra) {
+            $diasVencidos = $letra->fecha_vencimiento->diffInDays(now(), false);
+
+            if ($diasVencidos > $this->intereses_dias_tregua) {
+                $letra->calcularInteres();
+            }
+        });
     }
 }

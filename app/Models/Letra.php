@@ -38,7 +38,7 @@ class Letra extends Model
         return $this->hasMany(Abono::class);
     }
 
-    public function interes(): HasMany
+    public function intereses(): HasMany
     {
         return $this->hasMany(LetraInteres::class);
     }
@@ -52,4 +52,49 @@ class Letra extends Model
         return max($this->monto - $totalAbonado, 0);
     }
 
+    public function calcularInteres()
+    {
+        //sacar el monto por mes 
+        //diasVencidos = fecha_vencimineto - hoy
+        //interesPorMes = saldo_letra * (venta_porcentaje/100);
+        //interesPorDia = interesPorMes / 30
+        //interesBruto = letra_saldo + (interesPorDia * diasVencidos)
+        //interesNeto = interesBruto - SumatoriadescuentosActivos
+
+        $diasVencidos = $this->fecha_vencimiento->diffInDays(now(), false);
+
+        if ($diasVencidos <= 0) {
+            return;
+        }
+    
+        $porcentaje = $this->venta->intereses_porcentaje;
+    
+        $interesPorMes = $this->saldo * ($porcentaje / 100);
+        $interesPorDia = $interesPorMes / 30;
+    
+        $interesBruto = $interesPorDia * $diasVencidos;
+    
+        $sumatoriaDescuentos = $this->intereses()
+            ->with('descuentos')
+            ->get()
+            ->flatMap->descuentos
+            ->sum("monto_descontado");
+    
+        $interesNeto = max(0, $interesBruto - $sumatoriaDescuentos);
+    
+        $this->intereses()->updateOrCreate(
+            ['letra_id' => $this->id],
+            [
+                "monto_bruto" => $interesBruto,
+                "monto_neto" => $interesNeto,
+            ]
+        );
+
+        $this->saldo = $this->getSaldoSinInteres() + $interesNeto;
+        $this->save();
+    }
+
+    public function getSaldoSinInteres() {
+        return $this->montoRestante();
+    }
 }

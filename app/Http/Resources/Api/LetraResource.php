@@ -19,9 +19,11 @@ class LetraResource extends JsonResource
             'fecha_vencimiento' => optional($this->fecha_vencimiento)->format('Y-m-d'),
             'estado' => $this->estado,
             'saldo' => $this->saldo,
+            'saldo_sin_interes' => $this->getSaldoSinInteres(),
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),
             'abonos' => AbonoResource::collection($this->whenLoaded('abonos')),
+            "intereses" => $this->whenLoaded("intereses")
         ];
     }
 }

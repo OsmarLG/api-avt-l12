@@ -15,12 +15,12 @@ class LetraInteresDescuento extends Model
     protected $fillable = [
         'letra_interes_id',
         'porcentaje',
-        'monto_casacotado',
+        'monto_descontado',
     ];
 
     protected $casts = [
         'porcentaje' => 'decimal:2',
-        'monto_casacotado' => 'decimal:2',
+        'monto_descontado' => 'decimal:2',
     ];
 
     public function letraInteres(): BelongsTo

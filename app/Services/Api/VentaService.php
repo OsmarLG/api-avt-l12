@@ -2,6 +2,7 @@
 
 namespace App\Services\Api;
 
+use App\Http\Resources\Api\LetraResource;
 use App\Models\Letra;
 use App\Models\Person;
 use App\Models\PredioObservacion;
@@ -191,22 +192,28 @@ class VentaService
 
     public function detalleInteresMoratorio(Venta $venta): array
     {
+        $letrasVencidas = $venta->letrasVencidas();
+
+        $diasVencidos = $letrasVencidas->first()?->fecha_vencimiento->diffInDays(now());
+        $primerVencimiento = $letrasVencidas->first()?->fecha_vencimiento;
+        $interesPorDia = (float)$letrasVencidas->first()?->monto * ((float)$venta->intereses_porcentaje / 100) / 30;
+        $interesPorMes = $interesPorDia * 30;
+
         $detalle = [];
         $detalle['intereses_activo'] = $venta->intereses_activo;
         $detalle['intereses_porcentaje'] = $venta->intereses_porcentaje;
         $detalle['intereses_dias_tregua'] = $venta->intereses_dias_tregua;
-        $letrasVencidas = $venta->letrasVencidas();
-        $diasVencidos = $letrasVencidas->first()->fecha_vencimiento->diffInDays(now());
-        $primerVencimiento = $letrasVencidas->first()->fecha_vencimiento;
-        $mensualidad = $letrasVencidas->first()->monto;
-        $interesPorDia = $letrasVencidas->first()->monto * ($venta->interes_porcentaje / 100) / 30;
-        $interesPorMes = $interesPorDia * 30;
+        $detalle['inicio'] = $venta->letrasVencidas->first()?->consecutivo;
+        $detalle['fin'] = $venta->letrasVencidas->last()?->consecutivo;
+        $detalle['dias_vencidos'] = round($diasVencidos, 2);
+        $detalle['primer_vencimiento'] = $primerVencimiento;
+        $detalle['mensualidad'] = $venta->letrasVencidas->first()?->monto;
+        $detalle['interes_por_dia'] = round($interesPorDia, 2);
+        $detalle['interes_por_mes'] = round($interesPorMes, 2);
+        $detalle['total_intereses'] = $venta->getTotalIntereses();
+        $detalle['total_pagar'] = $venta->letrasVencidas()->sum("saldo");
+        $detalle['letras_vencidas'] = LetraResource::collection($venta->letrasVencidas()->with("intereses")->get());
 
-        $totalIntereses = DB::table("letras_intereses")
-        ->whereIn("letra_id", $letrasVencidas->pluck("id"))
-        ->sum("monto_neto");
-
-        
         return $detalle;
     }
 }
