@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Venta\UpdateLetraRequest;
+use App\Http\Requests\Api\Venta\BatchCreateLetraDiscountRequest;
 use App\Http\Resources\Api\LetraResource;
 use App\Models\Letra;
 use App\Services\Api\LetraService;
@@ -55,6 +56,21 @@ class LetraController extends Controller
         return ApiResponse::ok(
             new LetraResource($letra),
             'Letra actualizada correctamente'
+        );
+    }
+
+    /**
+     * Create discounts for multiple letras.
+     *
+     * Accepts multiple discounts and applies them to their respective letras.
+     */
+    public function batchCreateDiscounts(BatchCreateLetraDiscountRequest $request)
+    {
+        $letras = $this->service->batchCreateDiscounts($request->validated('discounts'));
+
+        return ApiResponse::ok(
+            LetraResource::collection($letras),
+            'Descuentos aplicados correctamente'
         );
     }
 }

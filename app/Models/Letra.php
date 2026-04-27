@@ -60,28 +60,29 @@ class Letra extends Model
         //interesPorDia = interesPorMes / 30
         //interesBruto = letra_saldo + (interesPorDia * diasVencidos)
         //interesNeto = interesBruto - SumatoriadescuentosActivos
+        $saldoSinInteres = $this->getSaldoSinInteres();
 
         $diasVencidos = $this->fecha_vencimiento->diffInDays(now(), false);
 
         if ($diasVencidos <= 0) {
             return;
         }
-    
+
         $porcentaje = $this->venta->intereses_porcentaje;
-    
-        $interesPorMes = $this->saldo * ($porcentaje / 100);
+
+        $interesPorMes = $saldoSinInteres * ($porcentaje / 100);
         $interesPorDia = $interesPorMes / 30;
-    
+
         $interesBruto = $interesPorDia * $diasVencidos;
-    
+
         $sumatoriaDescuentos = $this->intereses()
             ->with('descuentos')
             ->get()
             ->flatMap->descuentos
             ->sum("monto_descontado");
-    
+
         $interesNeto = max(0, $interesBruto - $sumatoriaDescuentos);
-    
+
         $this->intereses()->updateOrCreate(
             ['letra_id' => $this->id],
             [
@@ -90,11 +91,12 @@ class Letra extends Model
             ]
         );
 
-        $this->saldo = $this->getSaldoSinInteres() + $interesNeto;
+        $this->saldo = $saldoSinInteres + $interesNeto;
         $this->save();
     }
 
-    public function getSaldoSinInteres() {
+    public function getSaldoSinInteres()
+    {
         return $this->montoRestante();
     }
 }

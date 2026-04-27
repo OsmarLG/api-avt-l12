@@ -16,6 +16,8 @@ class LetraInteresDescuento extends Model
         'letra_interes_id',
         'porcentaje',
         'monto_descontado',
+        'comentario',
+        'estado',
     ];
 
     protected $casts = [
