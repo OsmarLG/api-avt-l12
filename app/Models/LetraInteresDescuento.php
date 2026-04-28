@@ -18,6 +18,8 @@ class LetraInteresDescuento extends Model
         'monto_descontado',
         'comentario',
         'estado',
+        "created_by",
+        "folio"
     ];
 
     protected $casts = [

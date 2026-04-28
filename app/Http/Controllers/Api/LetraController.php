@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Venta\UpdateLetraRequest;
 use App\Http\Requests\Api\Venta\BatchCreateLetraDiscountRequest;
+use App\Http\Requests\Api\Venta\GetLetraInteresDescuentosByVentaRequest;
+use App\Http\Requests\Api\Venta\GetLetraInteresDescuentosByFolioRequest;
 use App\Http\Resources\Api\LetraResource;
+use App\Http\Resources\Api\LetraInteresDescuentoResource;
 use App\Models\Letra;
+use App\Models\LetraInteresDescuento;
 use App\Services\Api\LetraService;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
@@ -71,6 +75,30 @@ class LetraController extends Controller
         return ApiResponse::ok(
             LetraResource::collection($letras),
             'Descuentos aplicados correctamente'
+        );
+    }
+
+    /**
+     * Get all interest discounts grouped by folio for a specific sale.
+     */
+    public function getInteresDescuentosByVenta(GetLetraInteresDescuentosByVentaRequest $request)
+    {
+        $descuentos = $this->service->getInteresDescuentosByVenta($request->validated('venta_id'));
+
+        return ApiResponse::ok($descuentos, 'Descuentos obtenidos correctamente');
+    }
+
+    /**
+     * Get all interest discounts for a specific folio (detail view).
+     */
+    public function getInteresDescuentosByFolio(GetLetraInteresDescuentosByFolioRequest $request)
+    {
+    
+        $descuentos = $this->service->getInteresDescuentosByFolio($request->validated('folio'));
+ 
+        return ApiResponse::ok(
+            LetraInteresDescuentoResource::collection(collect($descuentos)),
+            'Descuentos del folio obtenidos correctamente'
         );
     }
 }

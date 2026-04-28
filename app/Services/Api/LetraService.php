@@ -48,6 +48,8 @@ class LetraService
             "monto_descontado" => $data['monto_descontado'],
             "comentario" => $data['comentario'] ?? "",
             "estado" => $data['estado'] ?? 'activo',
+            "created_by" => $data['created_by'] ?? auth()->id(),
+            "folio" => $data['folio'] ?? uniqid('DESC-'),
         ]);
 
         $letra->calcularInteres();
@@ -58,6 +60,8 @@ class LetraService
     public function batchCreateDiscounts(array $discounts): array
     {
         $results = [];
+        $folio = uniqid('D-');
+        $userId = auth()->id();
 
         foreach ($discounts as $discount) {
             $letra = Letra::findOrFail($discount['letra_id']);
@@ -66,9 +70,42 @@ class LetraService
                 'monto_descontado' => $discount['monto_descontado'],
                 'comentario' => $discount['comentario'] ?? "",
                 'estado' => $discount['estado'] ?? 'activo',
+                'created_by' => $userId,
+                'folio' => $folio,
             ]);
         }
 
         return $results;
+    }
+
+    public function getInteresDescuentosByVenta(int $ventaId): array
+    {
+        $descuentos = LetraInteresDescuento::query()
+            ->whereHas('letraInteres.letra', function ($query) use ($ventaId) {
+                $query->where('venta_id', $ventaId);
+            })
+            ->orderBy("id","desc")
+            ->get()
+            ->groupBy('folio')
+            ->map(function ($group) {
+                return [
+                    'folio' => $group->first()->folio,
+                    'descuentos' => $group,
+                    'total_descuentos' => $group->sum('monto_descontado'),
+                    'total_porcentaje' => $group->sum('porcentaje'),
+                    'comentario' => $group->first()->comentario,
+                    'created_by' => $group->first()->created_by,
+                    'created_at' => $group->first()->created_at,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        return $descuentos;
+    }
+
+    public function getInteresDescuentosByFolio(string $folio)
+    {
+        return LetraInteresDescuento::where('folio', $folio)->get();
     }
 }
