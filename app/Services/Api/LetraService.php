@@ -84,12 +84,16 @@ class LetraService
             ->whereHas('letraInteres.letra', function ($query) use ($ventaId) {
                 $query->where('venta_id', $ventaId);
             })
-            ->orderBy("id","desc")
+            ->orderBy("id", "desc")
             ->get()
             ->groupBy('folio')
             ->map(function ($group) {
+                $group->each(function ($item) {
+                    $item->consecutivo = optional($item->letraInteres->letra)->consecutivo;
+                });
                 return [
                     'folio' => $group->first()->folio,
+                    'estado' => $group->first()->estado,
                     'descuentos' => $group,
                     'total_descuentos' => $group->sum('monto_descontado'),
                     'total_porcentaje' => $group->sum('porcentaje'),
