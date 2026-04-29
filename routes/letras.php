@@ -7,3 +7,4 @@ Route::apiResource('letras', LetraController::class)->only(['index', 'show', 'up
 Route::post('letras/batch/discounts', [LetraController::class, 'batchCreateDiscounts']);
 Route::get('letras/discounts/by-venta', [LetraController::class, 'getInteresDescuentosByVenta']);
 Route::get('letras/discounts/by-folio', [LetraController::class, 'getInteresDescuentosByFolio']);
+Route::patch('letras/discounts/cancel-by-folio', [LetraController::class, 'cancelarDescuentoByFolio']);

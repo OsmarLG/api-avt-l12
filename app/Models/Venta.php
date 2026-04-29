@@ -157,6 +157,10 @@ class Venta extends Model
 
     public function calcularIntereses()
     {
+        if($this->intereses_activo == false) {
+            return;
+        }
+
         $letras = $this->letrasVencidas()->get();
 
         if ($letras->isEmpty()) {
@@ -170,5 +174,7 @@ class Venta extends Model
                 $letra->calcularInteres();
             }
         });
+
+        $this->calcularCache();
     }
 }

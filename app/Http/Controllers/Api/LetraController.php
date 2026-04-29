@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Venta\UpdateLetraRequest;
 use App\Http\Requests\Api\Venta\BatchCreateLetraDiscountRequest;
+use App\Http\Requests\Api\Venta\CancelLetraInteresDescuentosByFolioRequest;
 use App\Http\Requests\Api\Venta\GetLetraInteresDescuentosByVentaRequest;
 use App\Http\Requests\Api\Venta\GetLetraInteresDescuentosByFolioRequest;
+use App\Http\Requests\Api\Venta\UpdateLetraRequest;
 use App\Http\Resources\Api\LetraResource;
 use App\Http\Resources\Api\LetraInteresDescuentoResource;
 use App\Models\Letra;
-use App\Models\LetraInteresDescuento;
 use App\Services\Api\LetraService;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
@@ -99,6 +99,19 @@ class LetraController extends Controller
         return ApiResponse::ok(
             LetraInteresDescuentoResource::collection(collect($descuentos)),
             'Descuentos del folio obtenidos correctamente'
+        );
+    }
+
+    /**
+     * Cancel all interest discounts for a specific folio.
+     */
+    public function cancelarDescuentoByFolio(CancelLetraInteresDescuentosByFolioRequest $request)
+    {
+        $descuentos = $this->service->cancelarDescuentoByFolio($request->validated('folio'));
+
+        return ApiResponse::ok(
+            LetraInteresDescuentoResource::collection($descuentos),
+            'Descuento cancelado correctamente'
         );
     }
 }

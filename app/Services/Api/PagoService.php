@@ -6,6 +6,7 @@ use App\Models\Abono;
 use App\Models\Letra;
 use App\Models\Pago;
 use App\Models\Venta;
+use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -122,14 +123,22 @@ class PagoService
 
             // distribuir el monto entre letras pendientes
             $restante = $monto;
+
             foreach ($venta->letrasPendientes() as $letra) {
+
+                $saldoLetra = round((float) $letra->saldo, 2);
+
+                if ($saldoLetra <= 0) {
+                    continue;
+                }
+
                 if ($restante <= 0) {
                     break;
                 }
 
-                $saldoLetra = $letra->montoRestante();
-                if ($saldoLetra <= 0) {
-                    continue;
+                $interes = $letra->intereses()->first();
+                if ($interes && $interes->monto_neto > 0 && $restante < $saldoLetra) {
+                    throw new Exception("No se puede abonar a letras con intereses, se debe liquidar");
                 }
 
                 $aplicado = min($saldoLetra, $restante);
@@ -140,7 +149,7 @@ class PagoService
                     'monto' => $aplicado,
                 ]);
 
-                $restante -= $aplicado;
+                $restante = round($restante - $aplicado, 2);
 
                 // actualizar saldo y estado de la letra según lo abonado
                 $nuevoSaldo = max($saldoLetra - $aplicado, 0);

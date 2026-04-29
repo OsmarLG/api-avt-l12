@@ -5,6 +5,9 @@ namespace App\Services\Api;
 use App\Models\Letra;
 use App\Models\LetraInteresDescuento;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class LetraService
 {
@@ -48,7 +51,7 @@ class LetraService
             "monto_descontado" => $data['monto_descontado'],
             "comentario" => $data['comentario'] ?? "",
             "estado" => $data['estado'] ?? 'activo',
-            "created_by" => $data['created_by'] ?? auth()->id(),
+            "created_by" => $data['created_by'] ?? Auth::id(),
             "folio" => $data['folio'] ?? uniqid('DESC-'),
         ]);
 
@@ -61,7 +64,7 @@ class LetraService
     {
         $results = [];
         $folio = uniqid('D-');
-        $userId = auth()->id();
+        $userId = Auth::id();
 
         foreach ($discounts as $discount) {
             $letra = Letra::findOrFail($discount['letra_id']);
@@ -110,6 +113,37 @@ class LetraService
 
     public function getInteresDescuentosByFolio(string $folio)
     {
+        return LetraInteresDescuento::where('folio', $folio)->get();
+    }
+
+    public function cancelarDescuentoByFolio(string $folio): Collection
+    {
+        $descuentos = LetraInteresDescuento::query()
+            ->where('folio', $folio)
+            ->with('letraInteres.letra.venta')
+            ->get();
+
+        $tieneLetrasLiquidadas = $descuentos->contains(function (LetraInteresDescuento $descuento) {
+            return $descuento->letraInteres->letra->estado === 'pagado';
+        });
+
+        if ($tieneLetrasLiquidadas) {
+            throw ValidationException::withMessages([
+                'folio' => 'Alguna de las letras del descuento ya está liquidada',
+            ]);
+        }
+
+        LetraInteresDescuento::where('folio', $folio)->update([
+            'estado' => 'cancelado',
+        ]);
+
+        $venta = $descuentos->first()?->letraInteres?->letra?->venta;
+
+        if ($venta) {
+            $venta->calcularIntereses();
+            $venta->calcularCache();
+        }
+
         return LetraInteresDescuento::where('folio', $folio)->get();
     }
 }

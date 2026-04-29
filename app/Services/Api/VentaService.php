@@ -207,7 +207,7 @@ class VentaService
         $detalle['fin'] = $venta->letrasVencidas->last()?->consecutivo;
         $detalle['dias_vencidos'] = round($diasVencidos, 2);
         $detalle['primer_vencimiento'] = $primerVencimiento;
-        $detalle['mensualidad'] = $venta->letrasVencidas->first()?->monto;
+        $detalle['mensualidad'] = $venta->letrasVencidas->first()?->getSaldoSinInteres() ?? 0;
         $detalle['interes_por_dia'] = round($interesPorDia, 2);
         $detalle['interes_por_mes'] = round($interesPorMes, 2);
         $detalle['total_intereses'] = $venta->getTotalIntereses();
@@ -215,5 +215,22 @@ class VentaService
         $detalle['letras_vencidas'] = LetraResource::collection($venta->letrasVencidas()->with("intereses")->get());
 
         return $detalle;
+    }
+
+    public function toggleIntereses(Venta $venta): Venta
+    {
+        if ($venta->intereses_activo) {
+            $venta->update(['intereses_activo' => false]);
+            $venta->letrasVencidas()->each(function (Letra $letra) {
+                $letra->intereses()->update(['monto_neto' => 0, 'monto_bruto' => 0]);
+                $letra->update(['saldo' => $letra->getSaldoSinInteres()]);
+            });
+        } else {
+            $venta->update(['intereses_activo' => true]);
+            $venta->calcularIntereses();
+        }
+
+        $venta->calcularCache();
+        return $venta->fresh();
     }
 }

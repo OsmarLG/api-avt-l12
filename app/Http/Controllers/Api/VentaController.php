@@ -64,7 +64,6 @@ class VentaController extends Controller
      */
     public function show(Venta $venta)
     {
-        
         $venta->calcularIntereses();
         return ApiResponse::ok(new VentaResource($this->service->find($venta)));
     }
@@ -125,5 +124,22 @@ class VentaController extends Controller
     {
         $detalle = $this->service->detalleInteresMoratorio($venta);
         return ApiResponse::ok($detalle, 'Detalle de intereses moratorio');
+    }
+
+    /**
+     * Toggle interests for a sale.
+     *
+     * If active, deactivates and resets all interest amounts.
+     * If inactive, activates and recalculates interests for overdue installments.
+     */
+    public function toggleIntereses(Venta $venta)
+    {
+        $venta = $this->service->toggleIntereses($venta);
+
+        $mensaje = $venta->intereses_activo
+            ? 'Intereses activados correctamente'
+            : 'Intereses inactivados correctamente';
+
+        return ApiResponse::ok(new VentaResource($venta), $mensaje);
     }
 }
