@@ -194,7 +194,10 @@ class VentaService
     {
         $letrasVencidas = $venta->letrasVencidas();
 
-        $diasVencidos = $letrasVencidas->first()?->fecha_vencimiento->diffInDays(now());
+        $diasVencidos = (int) $letrasVencidas->first()?->fecha_vencimiento
+        ->copy()
+        ->startOfDay()
+        ->diffInDays(now()->startOfDay(), false);
         $primerVencimiento = $letrasVencidas->first()?->fecha_vencimiento;
         $interesPorDia = (float)$letrasVencidas->first()?->getSaldoSinInteres() * ((float)$venta->intereses_porcentaje / 100) / 30;
         $interesPorMes = $interesPorDia * 30;

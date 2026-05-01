@@ -27,6 +27,7 @@ class ReportService
         // Obtener todos los abonos en el periodo
         $abonos = Abono::with(['letra.venta.comprador', 'letra.venta.predio.zone'])
             ->whereBetween('created_at', [$start, $end])
+            ->where("estado","activo")
             ->get();
 
         // Agrupar por Zona
@@ -102,6 +103,7 @@ class ReportService
 
         $abonos = Abono::with(['letra.venta.comprador', 'letra.venta.predio'])
             ->whereBetween('created_at', [$start, $end])
+            ->where("estado","activo")
             ->whereHas('letra.venta.predio', fn($q) => $q->where('zona_id', $zone->id))
             ->get();
 

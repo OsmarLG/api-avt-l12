@@ -4,6 +4,7 @@ namespace App\Services\Api;
 
 use App\Models\Abono;
 use App\Models\Letra;
+use App\Models\LetraInteres;
 use App\Models\Pago;
 use App\Models\Venta;
 use Exception;
@@ -65,7 +66,10 @@ class PagoService
         if (!empty($filters['fecha_final'])) {
             $query->whereDate('created_at', '<=', $filters['fecha_final']);
         }
-
+        
+        if (!empty($filters['estado'])) {
+            $query->where('estado', $filters['estado']);
+        }
 
         return $query;
     }
@@ -208,6 +212,14 @@ class PagoService
                         'saldo' => $abono->letra->saldo,
                         'estado' => $abono->letra->estado,
                         'fecha_vencimiento' => optional($abono->letra->fecha_vencimiento)->format('Y-m-d'),
+                        'saldo_sin_interes' => $abono->letra->getSaldoSinInteres(),
+                        'intereses' => $abono->letra->intereses->map(function (LetraInteres $interes) {
+                            return [
+                                'id' => $interes->id,
+                                'monto' => $interes->monto_neto,
+                                'created_at' => optional($interes->created_at)->toISOString(),
+                            ];
+                        }),
                     ] : null,
                 ];
             })->values()->all(),
