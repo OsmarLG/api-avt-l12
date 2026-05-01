@@ -78,11 +78,11 @@ class PagoService
     {
         $query = Pago::query()->with(['ticket']);
         $this->applyFilters($query, $filters);
-        $queryPagosDuenosPrimeraVez = clone $query;
-        $queryPagosDuenosReimpresion = clone $query;
 
-        $queryPagosDuenosPrimeraVez
-            ->whereNull('fecha_pago_dueno')
+        $idsPrimeraVez = (clone $query)->whereNull('fecha_pago_dueno')->pluck('id');
+        $idsReimpresion = (clone $query)->whereNotNull('fecha_pago_dueno')->pluck('id');
+
+        Pago::whereIn('id', $idsPrimeraVez)
             ->get()
             ->each(function ($pago) {
                 $pago->update([
@@ -92,8 +92,7 @@ class PagoService
                 ]);
             });
 
-        $queryPagosDuenosReimpresion
-            ->where("fecha_pago_dueno", "!=", null)
+        Pago::whereIn('id', $idsReimpresion)
             ->update(['reimpresion_ticket_dueno' => true]);
 
         return $query->orderBy('id', 'desc')->get();
