@@ -220,6 +220,16 @@ class VentaService
         return $detalle;
     }
 
+    public function changeMoratoriumParameters(Venta $venta, array $data): Venta
+    {
+        $venta->update($data);
+
+        $venta->calcularIntereses();
+        $venta->calcularCache();
+
+        return $venta->fresh();
+    }
+
     public function toggleIntereses(Venta $venta): Venta
     {
         if ($venta->intereses_activo) {

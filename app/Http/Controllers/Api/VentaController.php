@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Venta\CambiarCompradorRequest;
 use App\Http\Requests\Api\Venta\CancelVentaRequest;
+use App\Http\Requests\Api\Venta\ChangeMoratoriumParametersRequest;
 use App\Http\Requests\Api\Venta\StoreVentaRequest;
 use App\Http\Requests\Api\Venta\UpdateVentaRequest;
 use App\Http\Resources\Api\VentaResource;
@@ -124,6 +125,18 @@ class VentaController extends Controller
     {
         $detalle = $this->service->detalleInteresMoratorio($venta);
         return ApiResponse::ok($detalle, 'Detalle de intereses moratorio');
+    }
+
+    /**
+     * Change moratorium interest parameters for a sale.
+     *
+     * Updates intereses_porcentaje and intereses_dias_tregua, then recalculates interests and cache.
+     */
+    public function changeMoratoriumParameters(ChangeMoratoriumParametersRequest $request, Venta $venta)
+    {
+        $venta = $this->service->changeMoratoriumParameters($venta, $request->validated());
+
+        return ApiResponse::ok(new VentaResource($venta), 'Parámetros de moratoria actualizados correctamente');
     }
 
     /**

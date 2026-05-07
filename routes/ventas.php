@@ -10,6 +10,7 @@ Route::get('ventas/{venta}/pagares', [App\Http\Controllers\Api\VentaPagareContro
 Route::patch('ventas/{venta}/cambiar-comprador', [VentaController::class, 'cambiarComprador'])->name('ventas.cambiar-comprador');
 Route::get('ventas/{venta}/detalleInteresMoratorio', [VentaController::class, 'detalleInteresMoratorio']);
 Route::patch('ventas/{venta}/toggle-intereses', [VentaController::class, 'toggleIntereses'])->name('ventas.toggle-intereses');
+Route::patch('ventas/{venta}/change-moratorium-parameters', [VentaController::class, 'changeMoratoriumParameters'])->name('ventas.change-moratorium-parameters');
 
 // Files
 Route::get('ventas/{venta}/files', [VentaFileController::class, 'index'])->name('ventas.files.index');

@@ -172,6 +172,9 @@ class Venta extends Model
 
             if ($diasVencidos > $this->intereses_dias_tregua) {
                 $letra->calcularInteres();
+            }else {
+                $letra->intereses()->update(['monto_neto' => 0, 'monto_bruto' => 0]);
+                $letra->update(['saldo' => $letra->getSaldoSinInteres()]);
             }
         });
 
