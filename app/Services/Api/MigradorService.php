@@ -62,25 +62,139 @@ class MigradorService
           continue;
         }
 
-        $venta = Venta::create([
-          "folio" => $row["contrato"],
-          "person_id" => $persona->id,
-          "predio_id" => $predio->id,
-          "created_at" => $row["fecha_contratacion"],
-          "costo_lote" => $row["cantidad_total"],
-          "enganche" => $row["anticipo"],
-          "meses_a_pagar" => $row["letras"],
-          "saldo_venta" => $row["saldo"] ?? 0,
-          "estado" => $row["saldo"] == 0 ? "pagado" : "pagando",
-          "user_id" => 1,
-          "metodo_pago" => "meses",
-        ]);
-
+        [$venta, $row] = $this->createVenta($row, $persona, $predio);
         $this->createLetras($venta, $row);
       }
       //$this->command->info("Registros insertadost");
     });
   }
+
+  /**
+   * Completa contrato, letras, cantidad_pagada y saldo cuando vienen nulos/vacíos,
+   * persiste la venta y devuelve la fila ya coherente para createLetras.
+   *
+   * @return array{Venta, array<string, mixed>}
+   */
+  public function createVenta(array $row, Person $persona, Predio $predio): array
+  {
+    $zone = $predio->zone()->firstOrFail();
+
+    $row = $this->normalizarDatosVentaMigracion($row, $zone);
+
+    $saldo = (float) ($row['saldo'] ?? 0);
+
+    $venta = Venta::create([
+      'folio' => $row['contrato'],
+      'person_id' => $persona->id,
+      'predio_id' => $predio->id,
+      'created_at' => $row['fecha_contratacion'],
+      'costo_lote' => $row['cantidad_total'],
+      'enganche' => $row['anticipo'],
+      'meses_a_pagar' => $row['letras'],
+      'saldo_venta' => $saldo,
+      'estado' => $saldo == 0 ? 'pagado' : 'pagando',
+      'user_id' => 1,
+      'metodo_pago' => 'meses',
+    ]);
+
+    return [$venta, $row];
+  }
+
+  /**
+   * Deriva campos faltantes para migración: folio (contrato), meses (letras),
+   * cantidad pagada y saldo pendiente.
+   */
+  public function normalizarDatosVentaMigracion(array $row, Zone $zone): array
+  {
+    $anticipo = isset($row['anticipo']) && $row['anticipo'] !== '' && $row['anticipo'] !== null
+      ? (float) $row['anticipo']
+      : 0.0;
+    $cantidadTotal = (float) ($row['cantidad_total'] ?? 0);
+    $pagare = isset($row['pagare']) && $row['pagare'] !== '' && $row['pagare'] !== null
+      ? (float) $row['pagare']
+      : 0.0;
+    $letrasPagadas = isset($row['Letras pagadas']) && $row['Letras pagadas'] !== '' && $row['Letras pagadas'] !== null
+      ? (int) $row['Letras pagadas']
+      : 0;
+
+    if ($row['cantidad_pagada'] === null || $row['cantidad_pagada'] === '') {
+      $row['cantidad_pagada'] = $letrasPagadas * $pagare + $anticipo;
+    } else {
+      $row['cantidad_pagada'] = (float) $row['cantidad_pagada'];
+    }
+
+    if ($row['anticipo'] === null || $row['anticipo'] === '') {
+      $row['anticipo'] = $anticipo;
+    } else {
+      $row['anticipo'] = (float) $row['anticipo'];
+    }
+
+    $montoFinanciar = $cantidadTotal - (float) $row['anticipo'];
+
+    if ($row['letras'] === null || $row['letras'] === '') {
+      if ($pagare > 0 && $montoFinanciar > 0) {
+        // División casi nunca es entera: ceil = meses mínimos para cubrir el financiamiento con pagare fijo
+        $row['letras'] = (int) max(1, ceil($montoFinanciar / $pagare));
+      } elseif ($pagare > 0 && $montoFinanciar <= 0) {
+        $row['letras'] = 0;
+      } else {
+        $row['letras'] = isset($row['letras']) ? (int) $row['letras'] : 0;
+      }
+    } else {
+      $row['letras'] = (int) $row['letras'];
+    }
+
+    if ($row['saldo'] === null || $row['saldo'] === '') {
+      // Saldo pendiente = total menos pagado (equivale a lo que suele pedirse como "saldo a favor de la deuda")
+      $row['saldo'] = max(0.0, $cantidadTotal - (float) $row['cantidad_pagada']);
+    } else {
+      $row['saldo'] = (float) $row['saldo'];
+    }
+
+    if ($row['contrato'] === null || $row['contrato'] === '') {
+      $pref = $this->inicialesNombreZona($zone->nombre);
+      $n = $this->siguienteConsecutivoFolioZona($zone);
+      $row['contrato'] = $pref . '-' . $n;
+    }
+
+    $row['Letras pagadas'] = $letrasPagadas;
+
+    return $row;
+  }
+
+  private function inicialesNombreZona(string $nombre): string
+  {
+    $nombre = trim($nombre);
+    if ($nombre === '') {
+      return 'Z';
+    }
+
+    $parts = preg_split('/\s+/u', $nombre);
+    $pref = '';
+    foreach ($parts as $part) {
+      if ($part === '') {
+        continue;
+      }
+      $first = mb_substr($part, 0, 1, 'UTF-8');
+      if (preg_match('/^\p{L}$/u', $first)) {
+        $pref .= mb_strtoupper($first, 'UTF-8');
+      } elseif (ctype_digit($part)) {
+        $pref .= $part;
+      } elseif (preg_match('/^(\d+)/', $part, $m)) {
+        $pref .= $m[1];
+      }
+    }
+
+    return $pref !== '' ? $pref : 'Z';
+  }
+
+  private function siguienteConsecutivoFolioZona(Zone $zone): int
+  {
+    return (int) Venta::query()
+      ->whereHas('predio', fn ($q) => $q->where('zona_id', $zone->id))
+      ->count() + 1;
+  }
+
   public function validateCreateVenta($row)
   {
     if (preg_match('/^cancelado$/i', $row["comprador"])) {
@@ -173,8 +287,13 @@ class MigradorService
   }
   public function createLetras($venta, $row)
   {
-    $monto_por_letra = ($row["cantidad_total"] - $row["anticipo"]) / $row["letras"];
-    $saldo_anticipo = $row["cantidad_pagada"] > $row["anticipo"] ? 0 : $row["anticipo"] - $row["cantidad_pagada"];
+    $nLetras = (int) $row['letras'];
+    $monto_por_letra = $nLetras > 0
+      ? ((float) $row['cantidad_total'] - (float) $row['anticipo']) / $nLetras
+      : 0.0;
+    $saldo_anticipo = (float) $row['cantidad_pagada'] > (float) $row['anticipo']
+      ? 0
+      : (float) $row['anticipo'] - (float) $row['cantidad_pagada'];
 
     $venta->letras()->create([
       "descripcion" => "Anticipo",
@@ -189,9 +308,9 @@ class MigradorService
       ? Carbon::parse($row["fecha_contratacion"])
       : now();
 
-    for ($i = 0; $i < $row["letras"]; $i++) {
+    for ($i = 0; $i < $nLetras; $i++) {
       $fecha = $fechaBase->copy()->addMonths($i);
-      if ($row["Letras pagadas"] > $i) {
+      if ((int) $row['Letras pagadas'] > $i) {
         $venta->letras()->create([
           "descripcion" => "Letra " . ($i + 1),
           "monto" => $monto_por_letra,
@@ -211,7 +330,7 @@ class MigradorService
           "estado" => "pendiente",
           "fecha_vencimiento" =>  $fecha,
         ]);
-        if (($i + 1) === $row["Letras pagadas"] + 1) {
+        if (($i + 1) === (int) $row['Letras pagadas'] + 1) {
           $venta->proxima_letra_id = $letra->id;
           $venta->save();
         }
