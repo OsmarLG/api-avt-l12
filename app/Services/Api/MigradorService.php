@@ -288,12 +288,24 @@ class MigradorService
   public function createLetras($venta, $row)
   {
     $nLetras = (int) $row['letras'];
+    $cantidadTotal = (float) ($row['cantidad_total'] ?? 0);
+    $anticipo = (float) ($row['anticipo'] ?? 0);
+    $montoFinanciar = $cantidadTotal - $anticipo;
+
     $monto_por_letra = $nLetras > 0
-      ? ((float) $row['cantidad_total'] - (float) $row['anticipo']) / $nLetras
+      ? $montoFinanciar / $nLetras
       : 0.0;
     $saldo_anticipo = (float) $row['cantidad_pagada'] > (float) $row['anticipo']
       ? 0
       : (float) $row['anticipo'] - (float) $row['cantidad_pagada'];
+
+    $pagareFijo = null;
+    if (isset($row['pagare']) && $row['pagare'] !== '' && $row['pagare'] !== null) {
+      $p = (float) $row['pagare'];
+      if ($p > 0 && $nLetras > 0) {
+        $pagareFijo = $p;
+      }
+    }
 
     $venta->letras()->create([
       "descripcion" => "Anticipo",
@@ -309,11 +321,21 @@ class MigradorService
       : now();
 
     for ($i = 0; $i < $nLetras; $i++) {
-      $fecha = $fechaBase->copy()->addMonths($i);
+      $fecha = $fechaBase->copy()->addMonths($i + 1);
+
+      if ($pagareFijo !== null) {
+        $esUltima = ($i === $nLetras - 1);
+        $montoLetra = $esUltima
+          ? round(max(0.0, $montoFinanciar - ($nLetras - 1) * $pagareFijo), 2)
+          : $pagareFijo;
+      } else {
+        $montoLetra = $monto_por_letra;
+      }
+
       if ((int) $row['Letras pagadas'] > $i) {
         $venta->letras()->create([
           "descripcion" => "Letra " . ($i + 1),
-          "monto" => $monto_por_letra,
+          "monto" => $montoLetra,
           "saldo" => 0,
           "consecutivo" => $i + 1,
           "tipo" => "letra",
@@ -323,8 +345,8 @@ class MigradorService
       } else {
         $letra = $venta->letras()->create([
           "descripcion" => "Letra " . ($i + 1),
-          "monto" => $monto_por_letra,
-          "saldo" => $monto_por_letra,
+          "monto" => $montoLetra,
+          "saldo" => $montoLetra,
           "consecutivo" => $i + 1,
           "tipo" => "letra",
           "estado" => "pendiente",
