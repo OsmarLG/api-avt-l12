@@ -17,7 +17,7 @@ class StoreVentaRequest extends FormRequest
         return [
             'comprador_id' => ['required_without:person_id', 'exists:people,id'],
             'person_id' => ['required_without:comprador_id', 'exists:people,id'],
-            'aval_id' => ['required', 'exists:people,id'],
+            'aval_id' => ['nullable', 'exists:people,id'],
             'predio_id' => ['required', 'exists:predios,id'],
             'metodo_pago' => ['required', Rule::in(['meses', 'contado'])],
             'costo_lote' => ['required', 'numeric', 'min:0'],
