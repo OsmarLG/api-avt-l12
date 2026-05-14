@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de compradores morosos</title>
+    <title>Reporte de Contratos morosos</title>
     <style>
         @page {
             margin: 1cm;
@@ -61,7 +61,7 @@
     <div class="header">
         <span class="date">{{ $fecha_reporte }}</span>
         <div class="clear"></div>
-        <h1>Reporte de compradores morosos</h1>
+        <h1>Reporte de contratos morosos</h1>
         <div style="font-size: 10pt; margin-top: 4px;">{{ $periodo }}</div>
     </div>
 
