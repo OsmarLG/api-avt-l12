@@ -3,11 +3,11 @@
 namespace App\Services\Api;
 
 use App\Models\Abono;
+use App\Models\Letra;
+use App\Models\Person;
 use App\Models\Zone;
-use App\Models\Venta;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use App\Support\NumberToWords;
 
@@ -85,7 +85,7 @@ class ReportService
             'zonas' => $zonasReport,
             'total_general' => $totalGeneral,
             'total_letras' => $totalLetras,
-        ])->setPaper('legal', 'landscape');
+        ]);
 
         return $pdf->output();
     }
@@ -153,5 +153,123 @@ class ReportService
         ])->setPaper('legal', 'portrait');
 
         return $pdf->output();
+    }
+
+    /**
+     * Personas con al menos una venta activa que tenga letras pendientes vencidas.
+     * Una fila por venta (todas las letras vencidas del contrato en el mismo renglón).
+     */
+    public function generateReporteCompradoresMorosos(): string
+    {
+        App::setLocale('es');
+        Carbon::setLocale('es');
+
+        $asOf = Carbon::now()->startOfDay();
+
+        $personas = Person::query()
+            ->whereHas('ventas', function ($q) use ($asOf) {
+                $q->where('estado', '!=', 'cancelado')
+                    ->whereHas('letras', function ($q2) use ($asOf) {
+                        $q2->where('estado', 'pendiente')
+                            ->where('fecha_vencimiento', '<', $asOf);
+                    });
+            })
+            ->with([
+                'phones',
+                'emails',
+                'ventas' => function ($q) use ($asOf) {
+                    $q->where('estado', '!=', 'cancelado')
+                        ->whereHas('letras', function ($q2) use ($asOf) {
+                            $q2->where('estado', 'pendiente')
+                                ->where('fecha_vencimiento', '<', $asOf);
+                        })
+                        ->orderBy('folio');
+                },
+                'ventas.letras' => function ($q) use ($asOf) {
+                    $q->where('estado', 'pendiente')
+                        ->where('fecha_vencimiento', '<', $asOf)
+                        ->orderBy('fecha_vencimiento')
+                        ->orderBy('id');
+                },
+            ])
+            ->orderBy('apellido_paterno')
+            ->orderBy('apellido_materno')
+            ->orderBy('nombres')
+            ->get();
+
+        $filas = collect();
+        $totalLetrasVencidas = 0;
+
+        foreach ($personas as $person) {
+            $nombre = trim((string) ($person->full_name ?? ''));
+            if ($nombre === '') {
+                $nombre = trim("{$person->nombres} {$person->apellido_paterno}");
+            }
+
+            $telefonos = $person->phones->pluck('number')->filter()->unique()->implode(', ');
+            $correos = $person->emails->pluck('email')->filter()->unique()->implode(', ');
+
+            foreach ($person->ventas as $venta) {
+                $letrasVenc = $venta->letras;
+                if ($letrasVenc->isEmpty()) {
+                    continue;
+                }
+
+                $folio = $venta->folio ?: (string) $venta->id;
+
+                $nums = $letrasVenc->map(fn (Letra $l) => $this->numeroLetraMoroso($l))->unique()->values();
+                $numsOrdenados = $nums->sortBy(function ($n) {
+                    if ($n === 'ANT') {
+                        return -1;
+                    }
+
+                    return is_numeric($n) ? (float) $n : 9999;
+                })->values()->implode(', ');
+
+                $fechas = $letrasVenc
+                    ->sortBy(fn (Letra $l) => $l->fecha_vencimiento->timestamp)
+                    ->first()->fecha_vencimiento->translatedFormat('d \d\e F \d\e Y');
+
+                $totalLetrasVencidas += $letrasVenc->count();
+
+                $filas->push([
+                    'nombre' => $nombre,
+                    'numero_letra' => $numsOrdenados,
+                    'folio_contrato' => $folio,
+                    'fecha_vencimiento' => $fechas,
+                    'telefono' => $telefonos !== '' ? $telefonos : '—',
+                    'correo' => $correos !== '' ? $correos : '—',
+                ]);
+            }
+        }
+
+        $pdf = Pdf::loadView('pdfs.reporte_compradores_morosos', [
+            'periodo' => 'Letras vencidas al '.$asOf->translatedFormat('d \d\e F \d\e Y'),
+            'fecha_reporte' => Carbon::now()->translatedFormat('l, d \d\e F \d\e Y'),
+            'filas' => $filas,
+            'total_contratos' => $filas->count(),
+            'total_letras_vencidas' => $totalLetrasVencidas,
+        ]);
+
+        return $pdf->output();
+    }
+
+    private function numeroLetraMoroso(Letra $letra): string
+    {
+        $desc = $letra->descripcion;
+
+        if ($desc === 'ANTICIPO') {
+            return 'ANT';
+        }
+
+        if ($desc && preg_match('/Letra\s+(\d+)\//', $desc, $m)) {
+            return $m[1];
+        }
+
+        if ($desc && preg_match('/Letra\s+(\d+)\s+de\s+/i', $desc, $m)) {
+            return $m[1];
+        }
+
+        return (string) ($letra->consecutivo ?? '');
     }
 }

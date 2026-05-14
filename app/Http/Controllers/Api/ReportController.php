@@ -60,4 +60,16 @@ class ReportController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="bitacora_zona_' . $zone->id . '.pdf"');
     }
+
+    /**
+     * Genera el reporte PDF de compradores con letras vencidas (morosos).
+     */
+    public function ReporteCompradoresMorosos(): Response
+    {
+        $pdfContent = $this->reportService->generateReporteCompradoresMorosos();
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="reporte_compradores_morosos.pdf"');
+    }
 }

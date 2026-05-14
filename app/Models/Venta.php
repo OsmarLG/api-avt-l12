@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 
 class Venta extends Model
@@ -47,19 +48,85 @@ class Venta extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Venta $venta) {
-            if (!$venta->folio) {
-                $lastId = DB::table('ventas')->max('id') ?? 0;
-                $venta->folio = str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
-            }
-        });
-
         static::saving(function (Venta $venta) {
-            if (!$venta->folio) {
-                $lastId = DB::table('ventas')->max('id') ?? 0;
-                $venta->folio = str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+            if ($venta->folio) {
+                return;
             }
+
+            $venta->folio = self::generarFolioSiguiente($venta);
         });
+    }
+
+    /**
+     * Folio con prefijo de zona (dos iniciales del nombre de la zona del predio), p. ej. Los Girasoles → LG-1.
+     */
+    private static function generarFolioSiguiente(self $venta): string
+    {
+        $prefijo = self::prefijoInicialesZona($venta);
+        $n = self::siguienteConsecutivoFolio($prefijo);
+
+        if ($prefijo === '') {
+            return str_pad((string) $n, 4, '0', STR_PAD_LEFT);
+        }
+
+        return $prefijo.'-'.$n;
+    }
+
+    private static function prefijoInicialesZona(self $venta): string
+    {
+        if (! $venta->predio_id) {
+            return '';
+        }
+
+        $nombreZona = DB::table('predios')
+            ->join('zones', 'zones.id', '=', 'predios.zona_id')
+            ->where('predios.id', $venta->predio_id)
+            ->value('zones.nombre');
+
+        if (! $nombreZona || ! is_string($nombreZona)) {
+            return '';
+        }
+
+        return self::inicialesDesdeNombreZona($nombreZona);
+    }
+
+    private static function inicialesDesdeNombreZona(string $nombreZona): string
+    {
+        $nombreZona = trim($nombreZona);
+        $palabras = preg_split('/\s+/u', $nombreZona, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (count($palabras) >= 2) {
+            $a = mb_substr($palabras[0], 0, 1, 'UTF-8');
+            $b = mb_substr($palabras[1], 0, 1, 'UTF-8');
+
+            return mb_strtoupper($a.$b, 'UTF-8');
+        }
+
+        if (count($palabras) === 1) {
+            return mb_strtoupper(mb_substr($palabras[0], 0, 2, 'UTF-8'), 'UTF-8');
+        }
+
+        return '';
+    }
+
+    /**
+     * Consecutivo numérico: por prefijo de zona si existe; si no, sigue la secuencia global por max(id) + 1.
+     */
+    private static function siguienteConsecutivoFolio(string $prefijo): int
+    {
+        if ($prefijo === '') {
+            return (int) (DB::table('ventas')->max('id') ?? 0) + 1;
+        }
+
+        $patron = $prefijo.'-%';
+
+        $maximo = Venta::query()
+            ->where('folio', 'like', $patron)
+            ->pluck('folio')
+            ->map(fn (string $folio) => (int) Str::afterLast($folio, '-'))
+            ->max();
+
+        return ($maximo ?? 0) + 1;
     }
 
 

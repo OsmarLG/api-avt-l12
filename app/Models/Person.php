@@ -68,6 +68,11 @@ class Person extends Model
         return $this->hasMany(Reference::class);
     }
 
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class, 'person_id');
+    }
+
     protected function fullName(): Attribute
     {
         return Attribute::make(
