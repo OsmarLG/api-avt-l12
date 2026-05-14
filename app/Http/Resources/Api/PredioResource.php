@@ -29,6 +29,7 @@ class PredioResource extends JsonResource
             'vt' => $this->vt,
             'tasa' => $this->tasa,
             'manzana' => $this->manzana,
+            'lote' => $this->lote,
             'area' => $this->area,
             'zona_id' => $this->zona_id,
             'estado' => $this->estado,
