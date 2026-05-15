@@ -69,7 +69,7 @@ class Venta extends Model
             return str_pad((string) $n, 4, '0', STR_PAD_LEFT);
         }
 
-        return $prefijo.'-'.$n;
+        return $prefijo . '-' . $n;
     }
 
     private static function prefijoInicialesZona(self $venta): string
@@ -99,7 +99,7 @@ class Venta extends Model
             $a = mb_substr($palabras[0], 0, 1, 'UTF-8');
             $b = mb_substr($palabras[1], 0, 1, 'UTF-8');
 
-            return mb_strtoupper($a.$b, 'UTF-8');
+            return mb_strtoupper($a . $b, 'UTF-8');
         }
 
         if (count($palabras) === 1) {
@@ -118,12 +118,12 @@ class Venta extends Model
             return (int) (DB::table('ventas')->max('id') ?? 0) + 1;
         }
 
-        $patron = $prefijo.'-%';
+        $patron = $prefijo . '-%';
 
         $maximo = Venta::query()
             ->where('folio', 'like', $patron)
             ->pluck('folio')
-            ->map(fn (string $folio) => (int) Str::afterLast($folio, '-'))
+            ->map(fn(string $folio) => (int) Str::afterLast($folio, '-'))
             ->max();
 
         return ($maximo ?? 0) + 1;
@@ -224,7 +224,7 @@ class Venta extends Model
 
     public function calcularIntereses()
     {
-        if($this->intereses_activo == false) {
+        if ($this->intereses_activo == false) {
             return;
         }
 
@@ -239,12 +239,17 @@ class Venta extends Model
 
             if ($diasVencidos > $this->intereses_dias_tregua) {
                 $letra->calcularInteres();
-            }else {
+            } else {
                 $letra->intereses()->update(['monto_neto' => 0, 'monto_bruto' => 0]);
                 $letra->update(['saldo' => $letra->getSaldoSinInteres()]);
             }
         });
 
         $this->calcularCache();
+    }
+
+    public function getSaldoSinIntereses()
+    {
+        return $this->saldo_venta - $this->getTotalIntereses();
     }
 }

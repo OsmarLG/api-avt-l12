@@ -3,12 +3,16 @@
 namespace App\Services\Api;
 
 use App\Http\Resources\Api\LetraResource;
+use App\Models\Abono;
 use App\Models\Letra;
 use App\Models\Person;
 use App\Models\PredioObservacion;
 use App\Models\Venta;
+use App\Support\GoogleStaticMap;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
 class VentaService
@@ -245,5 +249,204 @@ class VentaService
 
         $venta->calcularCache();
         return $venta->fresh();
+    }
+
+    /**
+     * Genera el PDF del estado de cuenta de una venta.
+     */
+    public function generateEstadoCuenta(Venta $venta): string
+    {
+        App::setLocale('es');
+        Carbon::setLocale('es');
+
+        $venta->calcularIntereses();
+        $venta->refresh();
+
+        $venta->load([
+            'comprador',
+            'aval',
+            'predio.zone',
+            'proximaLetra.intereses',
+            'letras' => fn ($q) => $q->where('estado', '!=', 'cancelado')->orderBy('fecha_vencimiento'),
+        ]);
+
+        $predio = $venta->predio;
+        $letraActual = $venta->proximaLetra;
+
+        $totalLetras = $venta->letras->count();
+        $letrasPagadas = $venta->letras->where('estado', 'pagado')->count();
+
+        $totalPagado = (float) Abono::query()
+            ->where('estado', 'activo')
+            ->whereHas('pago', fn ($q) => $q->where('estado', 'activo'))
+            ->whereHas('letra', fn ($q) => $q->where('venta_id', $venta->id))
+            ->sum('monto');
+
+        $saldoPendiente = (float) ($venta->saldo_venta ?? 0);
+        $interesesAcumulados = (float) $venta->getTotalIntereses();
+        $precioVenta = (float) $venta->costo_lote;
+
+        $saldoSinInteresLetra = $letraActual ? (float) $letraActual->getSaldoSinInteres() : 0;
+        $saldoConInteresLetra = $letraActual ? (float) ($letraActual->saldo ?? $saldoSinInteresLetra) : 0;
+        $interesLetraActual = max(0, round($saldoConInteresLetra - $saldoSinInteresLetra, 2));
+
+        $ultimoAbono = Abono::query()
+            ->where('estado', 'activo')
+            ->whereHas('pago', fn ($q) => $q->where('estado', 'activo'))
+            ->whereHas('letra', fn ($q) => $q->where('venta_id', $venta->id))
+            ->with('pago')
+            ->latest('id')
+            ->first();
+
+        $compradorNombre = trim((string) ($venta->comprador->full_name ?? ''));
+        if ($compradorNombre === '') {
+            $compradorNombre = trim("{$venta->comprador->nombres} {$venta->comprador->apellido_paterno}");
+        }
+
+        $avalNombre = '—';
+        if ($venta->aval) {
+            $avalNombre = trim((string) ($venta->aval->full_name ?? ''));
+            if ($avalNombre === '') {
+                $avalNombre = trim("{$venta->aval->nombres} {$venta->aval->apellido_paterno}");
+            }
+        }
+
+        $estadoLabel = match ($venta->estado) {
+            'pagado' => 'PAGADA',
+            'cancelado' => 'CANCELADA',
+            default => 'ACTIVA',
+        };
+
+        $numeroLetraActual = $letraActual ? $this->numeroLetraDesdeDescripcion($letraActual) : '—';
+        $progresoDisplay = $totalLetras > 0
+            ? ($letraActual ? min($letrasPagadas, $totalLetras) : $letrasPagadas).' / '.$totalLetras
+            : '—';
+
+        $loteDisplay = $predio?->lote ?: ($predio?->gid ? 'L-'.$predio->gid : '—');
+        $manzanaDisplay = $predio?->manzana ? (str_starts_with((string) $predio->manzana, 'MZ') ? $predio->manzana : 'MZ-'.$predio->manzana) : '—';
+
+        $ultimoPagoFecha = null;
+        $ultimoPagoMonto = null;
+        if ($ultimoAbono?->pago) {
+            $fecha = $ultimoAbono->pago->fecha_pago ?? $ultimoAbono->created_at;
+            $ultimoPagoFecha = Carbon::parse($fecha)->locale('es')->translatedFormat('d \d\e F \d\e Y');
+            $ultimoPagoMonto = (float) $ultimoAbono->monto;
+        }
+
+        $letrasVencidas = $venta->letrasVencidas()
+            ->with('intereses')
+            ->get()
+            ->map(function (Letra $letra) {
+                $saldoSinInteres = round((float) $letra->getSaldoSinInteres(), 2);
+                $saldoConInteres = round((float) ($letra->saldo ?? $saldoSinInteres), 2);
+                $interes = max(0, round($saldoConInteres - $saldoSinInteres, 2));
+
+                return [
+                    'consecutivo' => $letra->consecutivo ?? '—',
+                    'descripcion' => $letra->descripcion ?? '—',
+                    'saldo_sin_interes' => $saldoSinInteres,
+                    'interes' => $interes,
+                    'saldo_con_interes' => $saldoConInteres,
+                    'fecha_vencimiento' => $letra->fecha_vencimiento
+                        ->copy()
+                        ->locale('es')
+                        ->translatedFormat('d \d\e F \d\e Y'),
+                ];
+            })
+            ->values();
+
+        $data = [
+            'fecha_emision' => Carbon::now()->locale('es')->translatedFormat('d \d\e F \d\e Y'),
+            'empresa_nombre' => config('app.name', 'TU EMPRESA'),
+            'folio' => $venta->folio ?: (string) $venta->id,
+            'estado_label' => $estadoLabel,
+            'estado_clase' => match ($venta->estado) {
+                'cancelado' => 'badge-cancelada',
+                'pagado' => 'badge-pagada',
+                default => 'badge-activa',
+            },
+            'zona' => $predio?->zone?->nombre ?? '—',
+            'comprador' => $compradorNombre,
+            'aval' => $avalNombre,
+            'clave_catastral' => $predio?->clave_catastral ?? '—',
+            'manzana' => $manzanaDisplay,
+            'lote' => $loteDisplay,
+            'ubicacion' => $predio?->ubicacion ?? '—',
+            'sup_terr' => $predio?->sup_terr ? number_format((float) $predio->sup_terr, 2).' m²' : '—',
+            'precio_venta' => $precioVenta,
+            'total_pagado' => $totalPagado,
+            'saldo_pendiente' => $saldoPendiente,
+            'intereses_acumulados' => $interesesAcumulados,
+            'progreso' => $progresoDisplay,
+            'numero_letra_actual' => $numeroLetraActual,
+            'letra_sin_interes' => $saldoSinInteresLetra,
+            'interes_letra_actual' => $interesLetraActual,
+            'letra_con_interes' => $saldoConInteresLetra,
+            'saldo_sin_interes' => $venta->getSaldoSinIntereses(),
+            'saldo_con_interes' => $venta->saldo_venta,
+            'ultimo_pago_fecha' => $ultimoPagoFecha,
+            'ultimo_pago_monto' => $ultimoPagoMonto,
+            'tiene_ultimo_pago' => $ultimoPagoFecha !== null,
+            'resumen' => [
+                'folio' => $venta->folio ?: (string) $venta->id,
+                'zona' => $predio?->zone?->nombre ?? '—',
+                'comprador' => $compradorNombre,
+                'aval' => $avalNombre,
+                'clave_catastral' => $predio?->clave_catastral ?? '—',
+                'manzana' => $manzanaDisplay,
+                'lote' => $loteDisplay,
+                'letra_progreso' => $progresoDisplay,
+                'total_pagado' => $totalPagado,
+                'saldo_pendiente' => $saldoPendiente,
+                'intereses_acumulados' => $interesesAcumulados,
+                'precio_venta' => $precioVenta,
+                'estado_label' => $estadoLabel,
+                'ultimo_pago' => $ultimoPagoFecha
+                    ? $ultimoPagoFecha.' · $'.number_format($ultimoPagoMonto, 2)
+                    : '—',
+            ],
+            'observaciones' => $venta->fecha_primer_abono
+                ? 'El pago de las letras se realiza conforme al calendario del contrato (primer abono: '
+                    .$venta->fecha_primer_abono->locale('es')->translatedFormat('d \d\e F \d\e Y')
+                    .'). En caso de retraso se generarán intereses moratorios conforme al contrato de compraventa.'
+                : 'En caso de retraso en los pagos se generarán intereses moratorios conforme al contrato de compraventa.',
+            'mapa_satellite_src' => GoogleStaticMap::satelliteImageForPredio($predio),
+            'letras_vencidas' => $letrasVencidas,
+            'logo_src' => $this->logoEstadoCuentaDataUri(),
+        ];
+
+        $pdf = Pdf::loadView('pdfs.venta_estado_cuenta', $data)->setPaper('letter', 'portrait');
+
+        return $pdf->output();
+    }
+
+    private function logoEstadoCuentaDataUri(): ?string
+    {
+        $path = public_path('images/avt-logo.png');
+
+        if (! is_readable($path)) {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    private function numeroLetraDesdeDescripcion(Letra $letra): string
+    {
+        $desc = $letra->descripcion;
+
+        if ($desc === 'ANTICIPO') {
+            return 'ANT';
+        }
+
+        if ($desc && preg_match('/Letra\s+(\d+)\//', $desc, $m)) {
+            return $m[1];
+        }
+
+        if ($desc && preg_match('/Letra\s+(\d+)\s+de\s+/i', $desc, $m)) {
+            return $m[1];
+        }
+
+        return (string) ($letra->consecutivo ?? '—');
     }
 }

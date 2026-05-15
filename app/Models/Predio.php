@@ -63,4 +63,63 @@ class Predio extends Model
     {
         return $this->hasMany(PredioObservacion::class);
     }
+
+    /**
+     * Centro aproximado del polígono (lat/lng) para mapas estáticos.
+     *
+     * @return array{lat: float, lng: float}|null
+     */
+    public function centroMapa(): ?array
+    {
+        if (! $this->polygon) {
+            return null;
+        }
+
+        $lats = [];
+        $lngs = [];
+
+        foreach ($this->polygon->getGeometries() as $lineString) {
+            foreach ($lineString->getGeometries() as $point) {
+                $lats[] = $point->latitude;
+                $lngs[] = $point->longitude;
+            }
+        }
+
+        if ($lats === []) {
+            return null;
+        }
+
+        return [
+            'lat' => round(array_sum($lats) / count($lats), 6),
+            'lng' => round(array_sum($lngs) / count($lngs), 6),
+        ];
+    }
+
+    /**
+     * Parámetro path para Google Static Maps (contorno del lote en satélite).
+     */
+    public function rutaPoligonoGoogleStatic(): ?string
+    {
+        if (! $this->polygon) {
+            return null;
+        }
+
+        $lineString = $this->polygon->getGeometries()->first();
+
+        if (! $lineString) {
+            return null;
+        }
+
+        $coords = [];
+
+        foreach ($lineString->getGeometries() as $point) {
+            $coords[] = $point->latitude.','.$point->longitude;
+        }
+
+        if (count($coords) < 3) {
+            return null;
+        }
+
+        return 'color:0x15803dff|weight:2|fillcolor:0x15803d33|'.implode('|', $coords);
+    }
 }

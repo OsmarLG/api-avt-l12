@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'google_maps' => [
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+        'static' => [
+            'zoom' => (int) env('GOOGLE_MAPS_STATIC_ZOOM', 18),
+            'size' => env('GOOGLE_MAPS_STATIC_SIZE', '640x320'),
+            'scale' => (int) env('GOOGLE_MAPS_STATIC_SCALE', 2),
+        ],
+    ],
+
 ];

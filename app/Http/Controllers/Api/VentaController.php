@@ -13,7 +13,8 @@ use App\Models\Venta;
 use App\Services\Api\VentaService;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class VentaController extends Controller
 {
@@ -54,8 +55,22 @@ class VentaController extends Controller
         return ApiResponse::ok(
             new VentaResource($venta),
             'Venta registrada correctamente',
-            Response::HTTP_CREATED
+            HttpResponse::HTTP_CREATED
         );
+    }
+
+    /**
+     * Genera el PDF del estado de cuenta de la venta.
+     */
+    public function estadoDeCuenta(Venta $venta): Response
+    {
+        $pdfContent = $this->service->generateEstadoCuenta($venta);
+
+        $filename = 'estado_cuenta_'.($venta->folio ?: $venta->id).'.pdf';
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
     }
 
     /**

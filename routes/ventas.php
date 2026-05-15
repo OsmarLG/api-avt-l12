@@ -9,6 +9,7 @@ Route::post('ventas/{venta}/cancel', [VentaController::class, 'cancel'])->name('
 Route::get('ventas/{venta}/pagares', [App\Http\Controllers\Api\VentaPagareController::class, 'show'])->name('ventas.pagares');
 Route::patch('ventas/{venta}/cambiar-comprador', [VentaController::class, 'cambiarComprador'])->name('ventas.cambiar-comprador');
 Route::get('ventas/{venta}/detalleInteresMoratorio', [VentaController::class, 'detalleInteresMoratorio']);
+Route::get('ventas/{venta}/estado-de-cuenta', [VentaController::class, 'estadoDeCuenta'])->name('ventas.estado-de-cuenta');
 Route::patch('ventas/{venta}/toggle-intereses', [VentaController::class, 'toggleIntereses'])->name('ventas.toggle-intereses');
 Route::patch('ventas/{venta}/change-moratorium-parameters', [VentaController::class, 'changeMoratoriumParameters'])->name('ventas.change-moratorium-parameters');
 
