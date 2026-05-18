@@ -15,6 +15,8 @@ class Abono extends Model
         'letra_id',
         'monto',
         "estado",
+        "created_at",
+        "updated_at"
     ];
 
     protected $casts = [

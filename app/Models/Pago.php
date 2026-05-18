@@ -29,6 +29,8 @@ class Pago extends Model
         'fecha_pago_dueno',
         'folio_dueno',
         'reimpresion_ticket_dueno',
+        "created_at",
+        "updated_at"
     ];
 
     protected $casts = [
