@@ -2,12 +2,16 @@
 
 namespace App\Services\Api;
 
+use App\Models\Abono;
+use App\Models\Letra;
+use App\Models\Pago;
 use App\Models\Person;
 use App\Models\Predio;
 use App\Models\Venta;
 use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class MigradorService
 {
@@ -307,7 +311,11 @@ class MigradorService
       }
     }
 
-    $venta->letras()->create([
+    $fechaBase = $row["fecha_contratacion"]
+      ? Carbon::parse($row["fecha_contratacion"])
+      : now();
+
+    $letraAnticipo = $venta->letras()->create([
       "descripcion" => "Anticipo",
       "monto" => $row["anticipo"] ?? 0,
       "saldo" => $saldo_anticipo ?? 0,
@@ -316,9 +324,13 @@ class MigradorService
       "estado" =>   $saldo_anticipo == 0 ? "pagado" : "pendiente",
       "fecha_vencimiento" => $row["fecha_contratacion"],
     ]);
-    $fechaBase = $row["fecha_contratacion"]
-      ? Carbon::parse($row["fecha_contratacion"])
-      : now();
+
+    $montoAbonadoAnticipo = $anticipo > 0
+      ? round(max(0.0, $anticipo - $saldo_anticipo), 2)
+      : 0.0;
+    if ($montoAbonadoAnticipo > 0) {
+      $this->registrarPagoMigracion($venta, $letraAnticipo, $montoAbonadoAnticipo, $fechaBase);
+    }
 
     for ($i = 0; $i < $nLetras; $i++) {
       $fecha = $fechaBase->copy()->addMonths($i + 1);
@@ -333,7 +345,7 @@ class MigradorService
       }
 
       if ((int) $row['Letras pagadas'] > $i) {
-        $venta->letras()->create([
+        $letra = $venta->letras()->create([
           "descripcion" => "Letra " . ($i + 1),
           "monto" => $montoLetra,
           "saldo" => 0,
@@ -342,6 +354,7 @@ class MigradorService
           "estado" => "pagado",
           "fecha_vencimiento" =>  $fecha,
         ]);
+        $this->registrarPagoMigracion($venta, $letra, $montoLetra, $fecha);
       } else {
         $letra = $venta->letras()->create([
           "descripcion" => "Letra " . ($i + 1),
@@ -358,5 +371,40 @@ class MigradorService
         }
       }
     }
+
+    $venta->calcularCache();
+  }
+
+  private function registrarPagoMigracion(Venta $venta, Letra $letra, float $monto, Carbon $fecha): void
+  {
+    $monto = round($monto, 2);
+    if ($monto <= 0) {
+      return;
+    }
+
+    $folio = 'MIG-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+
+    $pago = Pago::create([
+      'monto' => $monto,
+      'recibi' => $monto,
+      'cambio' => 0,
+      'referenica' => 'Migración',
+      'person_id' => $venta->person_id,
+      'estado' => 'activo',
+      'folio' => $folio,
+      'fecha_pago' => $fecha,
+      'user_id' => $venta->user_id ?? 1,
+      'metodo_pago' => 'efectivo',
+    ]);
+
+    Abono::create([
+      'pago_id' => $pago->id,
+      'letra_id' => $letra->id,
+      'monto' => $monto,
+      'estado' => 'activo',
+    ]);
+
+    $pagoService = new PagoService();
+    $pagoService->savePagoTicket($pago->id);
   }
 }

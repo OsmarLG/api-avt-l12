@@ -174,7 +174,7 @@ class PagoService
         });
     }
 
-    private function savePagoTicket(int $pagoId): void
+    public function savePagoTicket(int $pagoId): void
     {
         $pago = Pago::query()
             ->with(['person', 'user', 'abonos.letra'])
