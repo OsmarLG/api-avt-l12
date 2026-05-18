@@ -195,7 +195,7 @@ class MigradorService
   private function siguienteConsecutivoFolioZona(Zone $zone): int
   {
     return (int) Venta::query()
-      ->whereHas('predio', fn ($q) => $q->where('zona_id', $zone->id))
+      ->whereHas('predio', fn($q) => $q->where('zona_id', $zone->id))
       ->count() + 1;
   }
 
@@ -393,6 +393,7 @@ class MigradorService
       'estado' => 'activo',
       'folio' => $folio,
       'fecha_pago' => $fecha,
+      "created_at" => $fecha,
       'user_id' => $venta->user_id ?? 1,
       'metodo_pago' => 'efectivo',
     ]);
@@ -402,6 +403,7 @@ class MigradorService
       'letra_id' => $letra->id,
       'monto' => $monto,
       'estado' => 'activo',
+      "created_at" => $fecha
     ]);
 
     $pagoService = new PagoService();
