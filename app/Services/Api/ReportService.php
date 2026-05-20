@@ -158,32 +158,30 @@ class ReportService
     /**
      * Personas con al menos una venta activa que tenga letras pendientes vencidas.
      * Una fila por venta (todas las letras vencidas del contrato en el mismo renglón).
+     *
+     * Con periodo opcional: solo ventas cuya primera letra vencida (menor fecha_vencimiento
+     * entre letras pendientes con vencimiento anterior a hoy) cae entre startDate y endDate.
      */
-    public function generateReporteCompradoresMorosos(): string
+    public function generateReporteCompradoresMorosos(?string $startDate = null, ?string $endDate = null): string
     {
         App::setLocale('es');
         Carbon::setLocale('es');
 
         $asOf = Carbon::now()->startOfDay();
+        $periodStart = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+        $periodEnd = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+        $conPeriodo = $periodStart && $periodEnd;
 
         $personas = Person::query()
-            ->whereHas('ventas', function ($q) use ($asOf) {
-                $q->where('estado', '!=', 'cancelado')
-                    ->whereHas('letras', function ($q2) use ($asOf) {
-                        $q2->where('estado', 'pendiente')
-                            ->where('fecha_vencimiento', '<', $asOf);
-                    });
+            ->whereHas('ventas', function ($q) use ($asOf, $periodStart, $periodEnd, $conPeriodo) {
+                $this->aplicarFiltroVentasMorosas($q, $asOf, $periodStart, $periodEnd, $conPeriodo);
             })
             ->with([
                 'phones',
                 'emails',
-                'ventas' => function ($q) use ($asOf) {
-                    $q->where('estado', '!=', 'cancelado')
-                        ->whereHas('letras', function ($q2) use ($asOf) {
-                            $q2->where('estado', 'pendiente')
-                                ->where('fecha_vencimiento', '<', $asOf);
-                        })
-                        ->orderBy('folio');
+                'ventas' => function ($q) use ($asOf, $periodStart, $periodEnd, $conPeriodo) {
+                    $this->aplicarFiltroVentasMorosas($q, $asOf, $periodStart, $periodEnd, $conPeriodo);
+                    $q->orderBy('folio');
                 },
                 'ventas.letras' => function ($q) use ($asOf) {
                     $q->where('estado', 'pendiente')
@@ -226,9 +224,8 @@ class ReportService
                     return is_numeric($n) ? (float) $n : 9999;
                 })->values()->implode(', ');
 
-                $fechas = $letrasVenc
-                    ->sortBy(fn (Letra $l) => $l->fecha_vencimiento->timestamp)
-                    ->first()->fecha_vencimiento->translatedFormat('d \d\e F \d\e Y');
+                $primeraVencida = $letrasVenc->sortBy(fn (Letra $l) => $l->fecha_vencimiento->timestamp)->first();
+                $fechaPrimeraVencida = $primeraVencida->fecha_vencimiento->translatedFormat('d \d\e F \d\e Y');
 
                 $totalLetrasVencidas += $letrasVenc->count();
 
@@ -236,15 +233,21 @@ class ReportService
                     'nombre' => $nombre,
                     'numero_letra' => $numsOrdenados,
                     'folio_contrato' => $folio,
-                    'fecha_vencimiento' => $fechas,
+                    'fecha_vencimiento' => $fechaPrimeraVencida,
                     'telefono' => $telefonos !== '' ? $telefonos : '—',
                     'correo' => $correos !== '' ? $correos : '—',
                 ]);
             }
         }
 
+        $periodoLabel = $conPeriodo
+            ? 'Primera letra vencida del '.$periodStart->translatedFormat('d \d\e F \d\e Y')
+                .' al '.$periodEnd->translatedFormat('d \d\e F \d\e Y')
+                .' (corte al '.$asOf->translatedFormat('d \d\e F \d\e Y').')'
+            : 'Letras vencidas al '.$asOf->translatedFormat('d \d\e F \d\e Y');
+
         $pdf = Pdf::loadView('pdfs.reporte_compradores_morosos', [
-            'periodo' => 'Letras vencidas al '.$asOf->translatedFormat('d \d\e F \d\e Y'),
+            'periodo' => $periodoLabel,
             'fecha_reporte' => Carbon::now()->translatedFormat('l, d \d\e F \d\e Y'),
             'filas' => $filas,
             'total_contratos' => $filas->count(),
@@ -252,6 +255,26 @@ class ReportService
         ]);
 
         return $pdf->output();
+    }
+
+    /**
+     * Venta morosa: no cancelada, con letras pendientes vencidas (antes de hoy).
+     * Con periodo: la fecha de la primera de esas letras debe estar en el rango.
+     */
+    private function aplicarFiltroVentasMorosas($query, Carbon $asOf, ?Carbon $periodStart, ?Carbon $periodEnd, bool $conPeriodo): void
+    {
+        $query->where('estado', '!=', 'cancelado')
+            ->whereHas('letras', function ($q2) use ($asOf) {
+                $q2->where('estado', 'pendiente')
+                    ->where('fecha_vencimiento', '<', $asOf);
+            });
+
+        if ($conPeriodo) {
+            $query->whereRaw(
+                '(SELECT MIN(fecha_vencimiento) FROM letras WHERE letras.venta_id = ventas.id AND letras.estado = ? AND letras.fecha_vencimiento < ?) BETWEEN ? AND ?',
+                ['pendiente', $asOf->toDateString(), $periodStart->toDateString(), $periodEnd->toDateString()]
+            );
+        }
     }
 
     private function numeroLetraMoroso(Letra $letra): string

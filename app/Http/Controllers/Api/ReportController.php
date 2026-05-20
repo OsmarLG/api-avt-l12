@@ -63,10 +63,21 @@ class ReportController extends Controller
 
     /**
      * Genera el reporte PDF de compradores con letras vencidas (morosos).
+     *
+     * @queryParam start_date date Opcional. Inicio del periodo (YYYY-MM-DD). Filtra ventas cuya primera letra vencida caiga en el rango. Requiere end_date.
+     * @queryParam end_date date Opcional. Fin del periodo (YYYY-MM-DD). Requiere start_date.
      */
-    public function ReporteCompradoresMorosos(): Response
+    public function ReporteCompradoresMorosos(Request $request): Response
     {
-        $pdfContent = $this->reportService->generateReporteCompradoresMorosos();
+        $request->validate([
+            'start_date' => 'nullable|date|required_with:end_date',
+            'end_date' => 'nullable|date|required_with:start_date|after_or_equal:start_date',
+        ]);
+
+        $pdfContent = $this->reportService->generateReporteCompradoresMorosos(
+            $request->input('start_date'),
+            $request->input('end_date'),
+        );
 
         return response($pdfContent)
             ->header('Content-Type', 'application/pdf')
