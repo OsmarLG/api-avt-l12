@@ -2,15 +2,20 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Letra;
+use App\Models\User;
 use App\Services\Api\MigradorService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class ImportarDatosMaribelCommand extends Command
 {
     protected $signature = 'importar:datos-maribel
-                            {--zona-nombre=Maribel : Nombre de la zona en Zone}
-                            {--dueno-nombre=dueno_maribel : Identificador dueno_nombre de la zona}';
+                            {--zona-nombre=Etapa 1 : Nombre de la zona en Zone}
+                            {--dueno-nombre="dueno Etapa 1" : Identificador dueno_nombre de la zona}';
 
     protected $description = 'Importa registros desde database/seeders/bd_maribel.csv usando MigradorService';
 
@@ -53,35 +58,53 @@ class ImportarDatosMaribelCommand extends Command
 
         $this->info('Filas a importar: ' . count($datos));
 
+        $this->crearUsuarioAdministrador();
+
         $migrador->iniciar($datos, $zona);
 
+        // $letrasActualizadas = $this->ajustarDiaVencimientoLetrasAl(20);
+        //$this->info("Vencimiento de letras ajustado al día 20: {$letrasActualizadas} registro(s).");
+        /*
+
+        
+            UPDATE letras
+            SET fecha_vencimiento = DATE(
+                CONCAT(
+                    YEAR(fecha_vencimiento),
+                    '-',
+                    LPAD(MONTH(fecha_vencimiento), 2, '0'),
+                    '-20'
+                )
+            )
+            WHERE tipo != 'anticipo'
+            AND fecha_vencimiento IS NOT NULL;
+
+
+            */
         $this->info('Importación finalizada.');
 
         return self::SUCCESS;
     }
 
     /**
-     * CSV: 0 fecha_contratacion, 1 comprador, 2 lote, 3 manzana, 4 anticipo, 5 pagare, 6 Letras pagadas.
+     * CSV (bd_maribel): 0 fecha_contratacion, 1 ignorar (fecha corte), 2 comprador,
+     * 3 manzana, 4 lote, 5 anticipo, 6 pagare, 7 letras pagadas, 8 cantidad_pagada.
      *
      * @param  array<int, string|null>  $cols
      * @return array<string, mixed>|null
      */
     private function mapearFilaCsv(array $cols): ?array
     {
-        if (count($cols) < 7) {
-            return null;
-        }
-
-        $comprador = trim((string) ($cols[1] ?? ''));
-        if ($comprador === '') {
+        $comprador = trim((string) ($cols[2] ?? ''));
+        if ($comprador === '' || strcasecmp($comprador, 'cliente') === 0) {
             return null;
         }
 
         $fechaRaw = trim((string) ($cols[0] ?? ''));
         $fechaContratacion = $this->parseFechaContratacion($fechaRaw);
 
-        $lote = $this->parseEntero($cols[2] ?? null);
         $manzana = $this->parseEntero($cols[3] ?? null);
+        $lote = $this->parseEntero($cols[4] ?? null);
         if ($lote === null || $manzana === null) {
             return null;
         }
@@ -94,14 +117,53 @@ class ImportarDatosMaribelCommand extends Command
             'comprador' => $comprador,
             'telefono' => null,
             'm2' => null,
-            'Letras pagadas' => $this->parseLetrasPagadas($cols[6] ?? null),
+            'Letras pagadas' => $this->parseLetrasPagadas($cols[7] ?? null),
             'cantidad_total' => 300000,
-            'anticipo' => $this->parseDecimal($cols[4] ?? null),
+            'anticipo' => $this->parseDecimal($cols[5] ?? null),
             'letras' => null,
-            'pagare' => $this->parseDecimal($cols[5] ?? null),
+            'pagare' => $this->parseDecimal($cols[6] ?? null),
             'saldo' => null,
-            'cantidad_pagada' => null,
+            'cantidad_pagada' => $this->parseDecimal($cols[8] ?? null),
         ];
+    }
+
+    /**
+     * Mantiene año y mes de fecha_vencimiento; fija el día (anticipos no se modifican).
+     */
+    private function ajustarDiaVencimientoLetrasAl(int $dia): int
+    {
+        $dia = max(1, min(28, $dia));
+
+        return Letra::query()
+            ->where('tipo', '!=', 'anticipo')
+            ->whereNotNull('fecha_vencimiento')
+            ->update([
+                'fecha_vencimiento' => DB::raw(
+                    "DATE(CONCAT(YEAR(fecha_vencimiento), '-', LPAD(MONTH(fecha_vencimiento), 2, '0'), '-', '{$dia}'))"
+                ),
+            ]);
+    }
+
+    private function crearUsuarioAdministrador(): void
+    {
+        $user = User::updateOrCreate(
+            ['email' => 'admin@hotmail.com'],
+            [
+                'name' => 'administrador',
+                'username' => 'administrador',
+                'password' => Hash::make('password2026'),
+                'email_verified_at' => now(),
+                'is_active' => true,
+            ]
+        );
+
+        $role = Role::firstOrCreate(
+            ['name' => 'admin'],
+            ['guard_name' => 'web']
+        );
+        $user->syncRoles([$role->name]);
+
+        $this->info("Usuario administrador listo (id: {$user->id}, email: admin@hotmail.com).");
     }
 
     private function parseFechaContratacion(string $raw): ?string
