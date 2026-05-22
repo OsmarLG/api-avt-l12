@@ -11,6 +11,7 @@ use MatanYadaev\EloquentSpatial\Enums\Srid;
 use Illuminate\Support\Facades\URL;
 use App\Models\Venta;
 use App\Observers\VentaObserver;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
