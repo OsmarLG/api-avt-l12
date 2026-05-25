@@ -189,6 +189,10 @@ class ImportarDatosMaribelCommand extends Command
 
                 $fechaPago = $this->parseFechaAbono($fechaRaw);
 
+                if ($fechaPago === null) {
+                    $this->warn("Abono sin fecha: manzana {$manzana}, lote {$lote}, col {$c}, monto {$monto}");
+                }
+
                 try {
                     $pagoService->create([
                         'venta_id' => $venta->id,
