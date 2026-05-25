@@ -21,8 +21,8 @@ class VentaObserver
      */
     public function created(Venta $venta): void
     {
-        $this->documentService->generateContract($venta);
-        $this->documentService->generateReceipt($venta);
-        $this->pagareService->generate($venta);
+        // $this->documentService->generateContract($venta);
+        // $this->documentService->generateReceipt($venta);
+        // $this->pagareService->generate($venta);
     }
 }

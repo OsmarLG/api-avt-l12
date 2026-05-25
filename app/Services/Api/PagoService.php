@@ -119,9 +119,10 @@ class PagoService
                 'referenica' => $data["referenica"] ?? ($data["referencia"] ?? null),
                 'person_id' => $venta->person_id,
                 'folio' => $folio,
-                'fecha_pago' => now(),
+                'fecha_pago' => $data['fecha_pago'] ?? now(),
                 'user_id' => $userId,
-                'metodo_pago' => $data["metodo_pago"]
+                'metodo_pago' => $data["metodo_pago"],
+                "created_at" =>$data['fecha_pago'] ?? now(),
             ]);
 
             // distribuir el monto entre letras pendientes
@@ -150,6 +151,7 @@ class PagoService
                     'pago_id' => $pago->id,
                     'letra_id' => $letra->id,
                     'monto' => $aplicado,
+                    "created_at" => $data['fecha_pago'] ?? now(),
                 ]);
 
                 $restante = round($restante - $aplicado, 2);

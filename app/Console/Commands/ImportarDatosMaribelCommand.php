@@ -3,8 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Letra;
+use App\Models\Predio;
 use App\Models\User;
+use App\Models\Zone;
 use App\Services\Api\MigradorService;
+use App\Services\Api\PagoService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -62,25 +65,8 @@ class ImportarDatosMaribelCommand extends Command
 
         $migrador->iniciar($datos, $zona);
 
-        // $letrasActualizadas = $this->ajustarDiaVencimientoLetrasAl(20);
-        //$this->info("Vencimiento de letras ajustado al día 20: {$letrasActualizadas} registro(s).");
-        /*
+        $this->importarAbonosCsv((string) $this->option('zona-nombre'));
 
-        
-            UPDATE letras
-            SET fecha_vencimiento = DATE(
-                CONCAT(
-                    YEAR(fecha_vencimiento),
-                    '-',
-                    LPAD(MONTH(fecha_vencimiento), 2, '0'),
-                    '-20'
-                )
-            )
-            WHERE tipo != 'anticipo'
-            AND fecha_vencimiento IS NOT NULL;
-
-
-            */
         $this->info('Importación finalizada.');
 
         return self::SUCCESS;
@@ -125,6 +111,150 @@ class ImportarDatosMaribelCommand extends Command
             'saldo' => null,
             'cantidad_pagada' => $this->parseDecimal($cols[8] ?? null),
         ];
+    }
+
+    private function importarAbonosCsv(string $zonaNombre): void
+    {
+        $path = database_path('seeders/abonos_maribel.csv');
+
+        if (! is_readable($path)) {
+            $this->warn("No se encontró abonos_maribel.csv, se omite importación de abonos.");
+            return;
+        }
+
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            $this->warn("No se pudo abrir abonos_maribel.csv.");
+            return;
+        }
+
+        $zone = Zone::where('nombre', $zonaNombre)->first();
+        if (! $zone) {
+            $this->warn("Zona '{$zonaNombre}' no encontrada, se omiten abonos.");
+            fclose($handle);
+            return;
+        }
+
+        $pagoService = app(PagoService::class);
+        $userId = User::where('username', 'administrador')->value('id') ?? 1;
+        $totalPagos = 0;
+        $errores = 0;
+
+        $lineas = [];
+        while (($cols = fgetcsv($handle)) !== false) {
+            $lineas[] = $cols;
+        }
+        fclose($handle);
+
+        for ($r = 1; $r < count($lineas); $r += 2) {
+            $filaMonto = $lineas[$r] ?? null;
+            $filaFecha = $lineas[$r + 1] ?? null;
+
+            if (! $filaMonto || ! $filaFecha) {
+                continue;
+            }
+
+            $manzana = $this->parseEntero($filaMonto[0] ?? null);
+            $lote = $this->parseEntero($filaMonto[1] ?? null);
+            if ($manzana === null || $lote === null) {
+                continue;
+            }
+
+            $predio = Predio::where('zona_id', $zone->id)
+                ->where('manzana', $manzana)
+                ->where('lote', $lote)
+                ->first();
+
+            if (! $predio) {
+                $this->warn("Predio no encontrado: manzana {$manzana}, lote {$lote}");
+                $errores++;
+                continue;
+            }
+
+            $venta = $predio->ventas()->whereIn('estado', ['pagando', 'pagado'])->first();
+            if (! $venta) {
+                $this->warn("Venta no encontrada para predio manzana {$manzana}, lote {$lote}");
+                $errores++;
+                continue;
+            }
+
+            $numCols = max(count($filaMonto), count($filaFecha));
+            for ($c = 2; $c < $numCols; $c++) {
+                $monto = $this->parseDecimal($filaMonto[$c] ?? null);
+                $fechaRaw = trim((string) ($filaFecha[$c] ?? ''));
+
+                if ($monto === null || $monto <= 0) {
+                    continue;
+                }
+
+                $fechaPago = $this->parseFechaAbono($fechaRaw);
+
+                try {
+                    $pagoService->create([
+                        'venta_id' => $venta->id,
+                        'monto' => $monto,
+                        'recibi' => $monto,
+                        'cambio' => 0,
+                        'referenica' => 'Migración',
+                        'metodo_pago' => 'efectivo',
+                        'fecha_pago' => $fechaPago,
+                    ], $userId);
+                    $totalPagos++;
+                } catch (\Throwable $e) {
+                    $this->warn("Error pago manzana {$manzana}, lote {$lote}, col {$c}: {$e->getMessage()}");
+                    $errores++;
+                }
+            }
+        }
+
+        $this->info("Abonos CSV: {$totalPagos} pago(s) creados, {$errores} error(es).");
+    }
+
+    /**
+     * Parsea fechas del CSV de abonos: "dic-25", "05/01/2026", etc.
+     */
+    private function parseFechaAbono(string $raw): ?string
+    {
+        $raw = trim($raw);
+        $raw = preg_replace('/^\x{FEFF}/u', '', $raw);
+        if ($raw === '') {
+            return null;
+        }
+
+        $mesesEs = [
+            'ene' => 1,
+            'feb' => 2,
+            'mar' => 3,
+            'abr' => 4,
+            'may' => 5,
+            'jun' => 6,
+            'jul' => 7,
+            'ago' => 8,
+            'sep' => 9,
+            'oct' => 10,
+            'nov' => 11,
+            'dic' => 12,
+        ];
+
+        if (preg_match('/^([a-záéíóú]+)-(\d{2})$/iu', $raw, $m)) {
+            $mesKey = mb_strtolower($m[1], 'UTF-8');
+            $mes = $mesesEs[$mesKey] ?? null;
+            if ($mes) {
+                $anio = 2000 + (int) $m[2];
+                return Carbon::createFromDate($anio, $mes, 1)->startOfDay()->toDateTimeString();
+            }
+        }
+
+        try {
+            return Carbon::createFromFormat('d/m/Y', $raw)->startOfDay()->toDateTimeString();
+        } catch (\Throwable) {
+        }
+
+        try {
+            return Carbon::parse($raw)->startOfDay()->toDateTimeString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -227,3 +357,19 @@ class ImportarDatosMaribelCommand extends Command
         return (int) $n;
     }
 }
+        /*
+        
+            UPDATE letras
+            SET fecha_vencimiento = DATE(
+                CONCAT(
+                    YEAR(fecha_vencimiento),
+                    '-',
+                    LPAD(MONTH(fecha_vencimiento), 2, '0'),
+                    '-20'
+                )
+            )
+            WHERE tipo != 'anticipo'
+            AND fecha_vencimiento IS NOT NULL;
+
+
+            */

@@ -343,17 +343,17 @@ class MigradorService
       ]);
     }
 
-    if ($cantidadPagada > 0) {
-      app(PagoService::class)->create([
-        'venta_id' => $venta->id,
-        'monto' => $cantidadPagada,
-        'recibi' => $cantidadPagada,
-        'cambio' => 0,
-        'referenica' => 'Migración',
-        'metodo_pago' => 'efectivo',
-      ], (int) ($venta->user_id ?? 1));
-    } else {
-      $venta->calcularCache();
-    }
+    // if ($cantidadPagada > 0) {
+    //   app(PagoService::class)->create([
+    //     'venta_id' => $venta->id,
+    //     'monto' => $cantidadPagada,
+    //     'recibi' => $cantidadPagada,
+    //     'cambio' => 0,
+    //     'referenica' => 'Migración',
+    //     'metodo_pago' => 'efectivo',
+    //   ], (int) ($venta->user_id ?? 1));
+    // } else {
+    //   $venta->calcularCache();
+    // }
   }
 }
