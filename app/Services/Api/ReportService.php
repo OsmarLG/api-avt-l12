@@ -41,7 +41,7 @@ class ReportService
                 
                 // Formatear pagos: "1, 2 | 24"
                 $letrasNumeros = $abonosVenta->map(function ($a) {
-                    if($a->letra->descripcion == "ANTICIPO"){
+                    if(strtoupper($a->letra->descripcion)  == "ANTICIPO"){
                         return "ANT";
                     }else {
                         // Extraer número de "Letra 1/24"

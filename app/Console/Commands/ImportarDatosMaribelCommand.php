@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Models\Letra;
+use App\Models\Person;
 use App\Models\Predio;
 use App\Models\User;
+use App\Models\Venta;
 use App\Models\Zone;
 use App\Services\Api\MigradorService;
 use App\Services\Api\PagoService;
@@ -154,32 +156,23 @@ class ImportarDatosMaribelCommand extends Command
                 continue;
             }
 
-            $manzana = $this->parseEntero($filaMonto[0] ?? null);
-            $lote = $this->parseEntero($filaMonto[1] ?? null);
-            if ($manzana === null || $lote === null) {
+            $comprador = trim((string) ($filaMonto[0] ?? ''));
+            $manzana = $this->parseEntero($filaMonto[1] ?? null);
+            $lote = $this->parseEntero($filaMonto[2] ?? null);
+            if ($comprador === '' || $manzana === null || $lote === null) {
                 continue;
             }
 
-            $predio = Predio::where('zona_id', $zone->id)
-                ->where('manzana', $manzana)
-                ->where('lote', $lote)
-                ->first();
+            $venta = $this->buscarVentaPorCompradorYPredio($comprador, $manzana, $lote, $zone->id);
 
-            if (! $predio) {
-                $this->warn("Predio no encontrado: manzana {$manzana}, lote {$lote}");
-                $errores++;
-                continue;
-            }
-
-            $venta = $predio->ventas()->whereIn('estado', ['pagando', 'pagado'])->first();
             if (! $venta) {
-                $this->warn("Venta no encontrada para predio manzana {$manzana}, lote {$lote}");
+                $this->warn("Venta no encontrada: '{$comprador}', manzana {$manzana}, lote {$lote}");
                 $errores++;
                 continue;
             }
 
             $numCols = max(count($filaMonto), count($filaFecha));
-            for ($c = 2; $c < $numCols; $c++) {
+            for ($c = 3; $c < $numCols; $c++) {
                 $monto = $this->parseDecimal($filaMonto[$c] ?? null);
                 $fechaRaw = trim((string) ($filaFecha[$c] ?? ''));
 
@@ -212,6 +205,21 @@ class ImportarDatosMaribelCommand extends Command
         }
 
         $this->info("Abonos CSV: {$totalPagos} pago(s) creados, {$errores} error(es).");
+    }
+
+    private function buscarVentaPorCompradorYPredio(string $nombre, int $manzana, int $lote, int $zonaId): ?Venta
+    {
+        return Venta::query()
+            ->whereIn('estado', ['pagando', 'pagado'])
+            ->whereHas('comprador', function ($q) use ($nombre) {
+                $q->whereRaw("CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) = ?", [$nombre]);
+            })
+            ->whereHas('predio', function ($q) use ($manzana, $lote, $zonaId) {
+                $q->where('zona_id', $zonaId)
+                    ->where('manzana', $manzana)
+                    ->where('lote', $lote);
+            })
+            ->first();
     }
 
     /**
@@ -375,5 +383,21 @@ class ImportarDatosMaribelCommand extends Command
             WHERE tipo != 'anticipo'
             AND fecha_vencimiento IS NOT NULL;
 
+
+            UPDATE abonos
+            SET created_at = STR_TO_DATE(
+                CONCAT('2026-', DATE_FORMAT(created_at, '%m-%d %H:%i:%s')),
+                '%Y-%m-%d %H:%i:%s'
+            )
+            WHERE YEAR(created_at) = 2025
+            AND MONTH(created_at) <> 12;
+            
+            UPDATE pagos
+            SET created_at = STR_TO_DATE(
+                CONCAT('2026-', DATE_FORMAT(created_at, '%m-%d %H:%i:%s')),
+                '%Y-%m-%d %H:%i:%s'
+            )
+            WHERE YEAR(created_at) = 2025
+            AND MONTH(created_at) <> 12;
 
             */
