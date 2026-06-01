@@ -4,6 +4,7 @@ namespace App\Services\Api;
 
 use App\Models\Person;
 use App\Models\Predio;
+use App\Models\User;
 use App\Models\Venta;
 use App\Models\Zone;
 use Carbon\Carbon;
@@ -41,32 +42,42 @@ class MigradorService
   */
 
 
-  public function iniciar($datos, $zona)
+  public function iniciar($datos, $zona): void
   {
-    DB::transaction(function () use ($datos, $zona) {
+    $zone = Zone::firstOrCreate([
+      'nombre' => $zona['nombre'],
+      'dueno_nombre' => $zona['dueno_nombre'],
+    ]);
 
-      $zone = Zone::firstOrCreate([
-        "nombre" => $zona["nombre"],
-        "dueno_nombre" => $zona["dueno_nombre"],
-      ]);
+    foreach ($datos as $row) {
+      try {
+        DB::transaction(function () use ($row, $zone) {
+          $persona = $this->createPerson($row['comprador'], $row['telefono']);
+          $predio = $this->createPredio($row, $zone);
 
-      foreach ($datos as $row) {
+          if ($row['comprador'] == null) {
+            return;
+          }
+          if (preg_match('/cancelado/i', $row['comprador'])) {
+            return;
+          }
 
-        $persona = $this->createPerson($row["comprador"], $row["telefono"]);
-        $predio = $this->createPredio($row,  $zone);
+          [$venta, $row] = $this->createVenta($row, $persona, $predio);
 
-        if ($row["comprador"] == null) {
-          continue;
+          $this->createLetras($venta, $row);
+          
+        });
+      } catch (\Throwable $e) {
+        $comprador = $row['comprador'] ?? '—';
+        $manzana = $row['manzana'] ?? '—';
+        $lote = $row['L'] ?? '—';
+        $mensaje = "Error migrando {$comprador} (M{$manzana} L{$lote}): {$e->getMessage()}";
+
+        if (app()->runningInConsole()) {
+          fwrite(STDERR, $mensaje . PHP_EOL);
         }
-        if (preg_match('/cancelado/i', $row["comprador"])) {
-          continue;
-        }
-
-        [$venta, $row] = $this->createVenta($row, $persona, $predio);
-        $this->createLetras($venta, $row);
       }
-      //$this->command->info("Registros insertadost");
-    });
+    }
   }
 
   /**
@@ -83,6 +94,8 @@ class MigradorService
 
     $saldo = (float) ($row['saldo'] ?? 0);
 
+    $user = User::first();
+
     $venta = Venta::create([
       'folio' => $row['contrato'],
       'person_id' => $persona->id,
@@ -93,7 +106,7 @@ class MigradorService
       'meses_a_pagar' => $row['letras'],
       'saldo_venta' => $saldo,
       'estado' => $saldo == 0 ? 'pagado' : 'pagando',
-      'user_id' => 1,
+      'user_id' => $user->id,
       'metodo_pago' => 'meses',
       "intereses_activo" => 0,
     ]);
