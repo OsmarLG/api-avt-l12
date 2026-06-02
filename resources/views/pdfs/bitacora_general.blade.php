@@ -103,6 +103,14 @@
             font-weight: bold;
             margin-top: 10px;
         }
+        .total-row {
+            margin-bottom: 4px;
+        }
+        .total-row::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
         .total-label {
             display: inline-block;
             width: 70%;
@@ -181,8 +189,18 @@
 
     <div class="total-section">
         <div style="font-size: 8pt; margin-bottom: 5px;">TOTAL EN LETRA: {{ $total_letras }}</div>
-        <div class="total-label">Total:</div>
-        <div class="total-value">$ {{ number_format($total_general, 2) }}</div>
+        <div class="total-row">
+            <div class="total-label">Total abonado:</div>
+            <div class="total-value">$ {{ number_format($total_abonado, 2) }}</div>
+        </div>
+        <div class="total-row">
+            <div class="total-label">Total anticipos:</div>
+            <div class="total-value">$ {{ number_format($total_anticipos, 2) }}</div>
+        </div>
+        <div class="total-row" style="margin-top: 6px;">
+            <div class="total-label">Total:</div>
+            <div class="total-value">$ {{ number_format($total_general, 2) }}</div>
+        </div>
     </div>
 
     <table class="footer-table">

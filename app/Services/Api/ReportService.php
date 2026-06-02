@@ -74,6 +74,8 @@ class ReportService
         });
 
         $totalGeneral = $zonasReport->sum('subtotal');
+        $totalAbonado = $abonos->filter(fn ($a) => $a->letra->tipo === 'letra')->sum('monto');
+        $totalAnticipos = $abonos->filter(fn ($a) => $a->letra->tipo === 'anticipo')->sum('monto');
 
         $totalLetras = NumberToWords::convert($totalGeneral);
 
@@ -83,6 +85,8 @@ class ReportService
             'fecha_reporte' => Carbon::now()->translatedFormat('l, d \d\e F \d\e Y'),
             'zonas' => $zonasReport,
             'total_general' => $totalGeneral,
+            'total_abonado' => $totalAbonado,
+            'total_anticipos' => $totalAnticipos,
             'total_letras' => $totalLetras,
         ]);
 
