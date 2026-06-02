@@ -76,6 +76,7 @@ class ReportService
         $totalGeneral = $zonasReport->sum('subtotal');
         $totalAbonado = $abonos->filter(fn ($a) => $a->letra->tipo === 'letra')->sum('monto');
         $totalAnticipos = $abonos->filter(fn ($a) => $a->letra->tipo === 'anticipo')->sum('monto');
+        $totalContado = $abonos->filter(fn ($a) => $a->letra->tipo === 'contado')->sum('monto');
 
         $totalLetras = NumberToWords::convert($totalGeneral);
 
@@ -87,6 +88,7 @@ class ReportService
             'total_general' => $totalGeneral,
             'total_abonado' => $totalAbonado,
             'total_anticipos' => $totalAnticipos,
+            'total_contado' => $totalContado,
             'total_letras' => $totalLetras,
         ]);
 

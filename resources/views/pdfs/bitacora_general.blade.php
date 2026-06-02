@@ -197,6 +197,10 @@
             <div class="total-label">Total anticipos:</div>
             <div class="total-value">$ {{ number_format($total_anticipos, 2) }}</div>
         </div>
+        <div class="total-row">
+            <div class="total-label">Total contado:</div>
+            <div class="total-value">$ {{ number_format($total_contado, 2) }}</div>
+        </div>
         <div class="total-row" style="margin-top: 6px;">
             <div class="total-label">Total:</div>
             <div class="total-value">$ {{ number_format($total_general, 2) }}</div>
