@@ -128,7 +128,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th colspan="6" class="zone-header">{{ $z['responsable'] }} - {{ $z['zona_nombre'] }}</th>
+                        {{-- <th colspan="6" class="zone-header">{{ $z['responsable'] }} - {{ $z['zona_nombre'] }}</th> --}}
+                        <th colspan="6" class="zone-header"> {{ $z['zona_nombre'] }}</th>
                     </tr>
                     <tr>
                         <th style="width: 30px;">#</th>

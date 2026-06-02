@@ -333,8 +333,11 @@ class MigradorService
       "fecha_vencimiento" => $row["fecha_contratacion"],
     ]);
 
+    $fechaVencimiento = $fechaBase->copy();
+
     for ($i = 0; $i < $nLetras; $i++) {
-      $fecha = $fechaBase->copy()->addMonths($i + 1);
+      $fechaVencimiento->addMonth();
+      $fecha = $fechaVencimiento->copy();
 
       if ($pagareFijo !== null) {
         $esUltima = ($i === $nLetras - 1);
