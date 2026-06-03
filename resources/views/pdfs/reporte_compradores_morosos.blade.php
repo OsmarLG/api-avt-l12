@@ -69,12 +69,14 @@
         <thead>
             <tr>
                 <th style="width: 28px;">#</th>
-                <th style="width: 22%;">Cliente</th>
-                <th style="width: 14%;">Letras Vencidas</th>
-                <th style="width: 70px;">Folio contrato</th>
-                <th style="width: 22%;">Vencimiento (primera letra)</th>
-                <th style="width: 16%;">Teléfono</th>
-                <th style="width: 18%;">Correo</th>
+                <th style="width: 18%;">Cliente</th>
+                <th style="width: 12%;">Letras Vencidas</th>
+                <th style="width: 60px;">Folio contrato</th>
+                <th style="width: 50px;">Lote</th>
+                <th style="width: 50px;">Manzana</th>
+                <th style="width: 18%;">Vencimiento (primera letra)</th>
+                <th style="width: 12%;">Teléfono</th>
+                <th style="width: 14%;">Correo</th>
             </tr>
         </thead>
         <tbody>
@@ -84,13 +86,15 @@
                     <td>{{ $f['nombre'] }}</td>
                     <td>{{ $f['numero_letra'] }}</td>
                     <td class="text-center">{{ $f['folio_contrato'] }}</td>
+                    <td class="text-center">{{ $f['lote'] }}</td>
+                    <td class="text-center">{{ $f['manzana'] }}</td>
                     <td>{{ $f['fecha_vencimiento'] }}</td>
                     <td>{{ $f['telefono'] }}</td>
                     <td>{{ $f['correo'] }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">No hay registros con letras vencidas.</td>
+                    <td colspan="9" class="text-center">No hay registros con letras vencidas.</td>
                 </tr>
             @endforelse
         </tbody>

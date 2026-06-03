@@ -185,7 +185,7 @@ class ReportService
                 'emails',
                 'ventas' => function ($q) use ($asOf, $periodStart, $periodEnd, $conPeriodo) {
                     $this->aplicarFiltroVentasMorosas($q, $asOf, $periodStart, $periodEnd, $conPeriodo);
-                    $q->orderBy('folio');
+                    $q->with('predio')->orderBy('folio');
                 },
                 'ventas.letras' => function ($q) use ($asOf, $periodStart, $periodEnd, $conPeriodo) {
                     $this->aplicarFiltroLetrasMorosasVencidas(
@@ -221,6 +221,9 @@ class ReportService
                 }
 
                 $folio = $venta->folio ?: (string) $venta->id;
+                $predio = $venta->predio;
+                $lote = $predio ? ($predio->lote ?: $predio->gid) : null;
+                $manzana = $predio?->manzana;
 
                 $nums = $letrasVenc->map(fn(Letra $l) => $this->numeroLetraMoroso($l))->unique()->values();
                 $numsOrdenados = $nums->sortBy(function ($n) {
@@ -240,6 +243,8 @@ class ReportService
                     'nombre' => $nombre,
                     'numero_letra' => $numsOrdenados,
                     'folio_contrato' => $folio,
+                    'lote' => $lote !== null && $lote !== '' ? (string) $lote : '—',
+                    'manzana' => $manzana !== null && $manzana !== '' ? (string) $manzana : '—',
                     'fecha_vencimiento' => $fechaPrimeraVencida,
                     'telefono' => $telefonos !== '' ? $telefonos : '—',
                     'correo' => $correos !== '' ? $correos : '—',
