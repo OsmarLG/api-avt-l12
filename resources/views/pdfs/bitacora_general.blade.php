@@ -137,15 +137,17 @@
                 <thead>
                     <tr>
                         {{-- <th colspan="6" class="zone-header">{{ $z['responsable'] }} - {{ $z['zona_nombre'] }}</th> --}}
-                        <th colspan="6" class="zone-header"> {{ $z['zona_nombre'] }}</th>
+                        <th colspan="8" class="zone-header"> {{ $z['zona_nombre'] }}</th>
                     </tr>
                     <tr>
                         <th style="width: 30px;">#</th>
                         <th style="width: 60px;">CONT</th>
                         <th>CLIENTE</th>
-                        <th style="width: 120px;">C. C.</th>
-                        <th style="width: 100px;">PAGOS</th>
-                        <th style="width: 100px;">IMPORTE</th>
+                        <th style="width: 110px;">C. C.</th>
+                        <th style="width: 45px;">MZA</th>
+                        <th style="width: 45px;">LOTE</th>
+                        <th style="width: 90px;">PAGOS</th>
+                        <th style="width: 90px;">IMPORTE</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,6 +157,8 @@
                             <td class="text-center">{{ $d['folio'] }}</td>
                             <td>{{ $d['cliente'] }}</td>
                             <td class="text-center">{{ $d['clave_catastral'] }}</td>
+                            <td class="text-center">{{ $d['manzana'] }}</td>
+                            <td class="text-center">{{ $d['lote'] }}</td>
                             <td class="text-center">{{ $d['pagos_display'] }}</td>
                             <td class="text-right">$ {{ number_format($d['importe'], 2) }}</td>
                         </tr>
@@ -162,7 +166,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="subtotal-row">
-                        <td colspan="5" class="text-right">Subtotal:</td>
+                        <td colspan="7" class="text-right">Subtotal:</td>
                         <td class="text-right">$ {{ number_format($z['subtotal'], 2) }}</td>
                     </tr>
                 </tfoot>
@@ -172,15 +176,17 @@
             <table>
                 <thead>
                     <tr>
-                        <th colspan="6" class="zone-header">{{ $z['responsable'] }} - {{ $z['zona_nombre'] }}</th>
+                        <th colspan="8" class="zone-header">{{ $z['responsable'] }} - {{ $z['zona_nombre'] }}</th>
                     </tr>
                     <tr>
                         <th style="width: 30px;">#</th>
                         <th style="width: 60px;">CONT</th>
                         <th>CLIENTE</th>
-                        <th style="width: 120px;">C. C.</th>
-                        <th style="width: 100px;">PAGOS</th>
-                        <th style="width: 100px;">IMPORTE</th>
+                        <th style="width: 110px;">C. C.</th>
+                        <th style="width: 45px;">LOTE</th>
+                        <th style="width: 45px;">MZA</th>
+                        <th style="width: 90px;">PAGOS</th>
+                        <th style="width: 90px;">IMPORTE</th>
                     </tr>
                 </thead>
             </table>

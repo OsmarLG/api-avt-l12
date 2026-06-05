@@ -92,6 +92,37 @@
             margin-top: 10px;
         }
 
+        .summary-totals {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+
+        .summary-totals td {
+            border: none;
+            padding: 3px 0;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+
+        .summary-totals .total-label {
+            text-align: right;
+            padding-right: 12px;
+            width: 75%;
+        }
+
+        .summary-totals .total-value {
+            text-align: right;
+            width: 25%;
+            white-space: nowrap;
+        }
+
+        .summary-totals .total-final td {
+            border-top: 1px solid #666;
+            padding-top: 6px;
+            margin-top: 4px;
+        }
+
         .footer-grid {
             margin-top: 20px;
             display: table;
@@ -163,8 +194,8 @@
                 <th style="width: 50px;">Cont.</th>
                 <th>Comprador:</th>
                 <th style="width: 110px;">C.C.:</th>
-                <th style="width: 40px;">Lote:</th>
                 <th style="width: 40px;">Mza:</th>
+                <th style="width: 40px;">Lote:</th>
                 <th style="width: 80px;">Pagos:</th>
                 <th style="width: 90px;">Importe:</th>
             </tr>
@@ -176,8 +207,8 @@
                     <td class="text-center">{{ $d['folio'] }}</td>
                     <td>{{ $d['cliente'] }}</td>
                     <td class="text-center">{{ $d['clave_catastral'] }}</td>
-                    <td class="text-center">{{ $d['lote'] }}</td>
                     <td class="text-center">{{ $d['manzana'] }}</td>
+                    <td class="text-center">{{ $d['lote'] }}</td>
                     <td class="text-center">{{ $d['pagos_display'] }}</td>
                     <td class="text-right">$ {{ number_format($d['importe'], 2) }}</td>
                 </tr>
@@ -187,10 +218,26 @@
 
     <div class="summary-box">
         <div style="font-size: 8pt; margin-bottom: 5px;">TOTAL EN LETRA: {{ $total_letras }}</div>
-        <div style="overflow: hidden;">
-            <div style="float: left; font-weight: bold;">Total:</div>
-            <div style="float: right; font-weight: bold;">$ {{ number_format($total, 2) }}</div>
-        </div>
+        <table class="summary-totals">
+            <tbody>
+                <tr>
+                    <td class="total-label">Total abonado:</td>
+                    <td class="total-value">$ {{ number_format($total_abonado, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="total-label">Total anticipos:</td>
+                    <td class="total-value">$ {{ number_format($total_anticipos, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="total-label">Total contado:</td>
+                    <td class="total-value">$ {{ number_format($total_contado, 2) }}</td>
+                </tr>
+                <tr class="total-final">
+                    <td class="total-label">Total:</td>
+                    <td class="total-value">$ {{ number_format($total, 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="footer-grid">

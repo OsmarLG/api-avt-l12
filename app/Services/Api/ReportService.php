@@ -60,6 +60,8 @@ class ReportService
                     'folio' => $venta->folio ?: $venta->id,
                     'cliente' => $venta->comprador->full_name ?? ($venta->comprador->nombres . ' ' . $venta->comprador->apellido_paterno),
                     'clave_catastral' => $predio->clave_catastral,
+                    'lote' => $predio->lote ?: $predio->gid,
+                    'manzana' => $predio->manzana,
                     'pagos_display' => $letrasNumeros . ($totalLetras ? " | $totalLetras" : ""),
                     'importe' => $abonosVenta->sum('monto'),
                 ];
@@ -117,7 +119,7 @@ class ReportService
             $predio = $venta->predio;
 
             $letrasNumeros = $abonosVenta->map(function ($a) {
-                if ($a->letra->descripcion == "ANTICIPO") {
+                if (strtoupper($a->letra->descripcion) == "ANTICIPO") {
                     return "ANT";
                 } else {
                     // Extraer número de "Letra 1/24"
@@ -145,6 +147,9 @@ class ReportService
         })->values();
 
         $total = $detalles->sum('importe');
+        $totalAbonado = $abonos->filter(fn ($a) => $a->letra->tipo === 'letra')->sum('monto');
+        $totalAnticipos = $abonos->filter(fn ($a) => $a->letra->tipo === 'anticipo')->sum('monto');
+        $totalContado = $abonos->filter(fn ($a) => $a->letra->tipo === 'contado')->sum('monto');
         $totalLetras = NumberToWords::convert($total);
 
         $pdf = Pdf::loadView('pdfs.bitacora_zona', [
@@ -154,6 +159,9 @@ class ReportService
             'fecha_reporte' => Carbon::now()->translatedFormat('l, d \d\e F \d\e Y'),
             'detalles' => $detalles,
             'total' => $total,
+            'total_abonado' => $totalAbonado,
+            'total_anticipos' => $totalAnticipos,
+            'total_contado' => $totalContado,
             'total_letras' => $totalLetras,
         ])->setPaper('legal', 'portrait');
 
