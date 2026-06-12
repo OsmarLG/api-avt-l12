@@ -128,23 +128,29 @@
             </tr>
             <tr>
                 <th>Fecha de Nacimiento</th>
-                <td>{{ $person->fecha_nacimiento?->format('d/m/Y') }} ({{ $person->edad }} años)</td>
+                <td>
+                    @if ($person->fecha_nacimiento)
+                        {{ $person->fecha_nacimiento->format('d/m/Y') }} ({{ $person->edad_calculada }} años)
+                    @else
+                        —
+                    @endif
+                </td>
             </tr>
             <tr>
                 <th>Sexo</th>
-                <td>{{ $person->sexo }}</td>
+                <td>{{ mb_convert_case($person->sexo, MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Nacionalidad</th>
-                <td>{{ $person->nacionalidad }}</td>
+                <td>{{ mb_convert_case($person->nacionalidad, MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Estado Civil</th>
-                <td>{{ $person->estado_civil }}</td>
+                <td>{{ mb_convert_case($person->estado_civil , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Ocupación o Profesión</th>
-                <td>{{ $person->ocupacion_profesion }}</td>
+                <td>{{ mb_convert_case($person->ocupacion_profesion , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>R.F.C.</th>
@@ -167,19 +173,19 @@
         <table>
             <tr>
                 <th>País</th>
-                <td>{{ $person->pais_nacimiento }}</td>
+                <td>{{ mb_convert_case($person->pais_nacimiento , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Estado</th>
-                <td>{{ $person->estado_nacimiento }}</td>
+                <td>{{ mb_convert_case($person->estado_nacimiento , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Municipio</th>
-                <td>{{ $person->municipio_nacimiento }}</td>
+                <td>{{ mb_convert_case($person->municipio_nacimiento , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Localidad</th>
-                <td>{{ $person->localidad_nacimiento }}</td>
+                <td>{{ mb_convert_case($person->localidad_nacimiento , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
         </table>
     </div>
@@ -206,19 +212,19 @@
             </tr>
             <tr>
                 <th>Localidad</th>
-                <td>{{ $person->localidad_domicilio }}</td>
+                <td>{{ mb_convert_case($person->localidad_domicilio , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Municipio</th>
-                <td>{{ $person->municipio_domicilio }}</td>
+                <td>{{ mb_convert_case($person->municipio_domicilio , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>Estado</th>
-                <td>{{ $person->estado_domicilio }}</td>
+                <td>{{ mb_convert_case($person->estado_domicilio , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
             <tr>
                 <th>País</th>
-                <td>{{ $person->pais_domicilio }}</td>
+                <td>{{ mb_convert_case($person->pais_domicilio , MB_CASE_TITLE, "UTF-8") }}</td>
             </tr>
         </table>
     </div>
@@ -241,7 +247,7 @@
                     @foreach($person->phones as $phone)
                         <tr>
                             <td>{{ $phone->number }}</td>
-                            <td>{{ $phone->type }}</td>
+                            <td>{{ mb_convert_case($phone->type , MB_CASE_TITLE, "UTF-8") }}</td>
                             <td>{{ $phone->description }}</td>
                         </tr>
                     @endforeach
@@ -266,7 +272,7 @@
                     @foreach($person->emails as $email)
                         <tr>
                             <td>{{ $email->email }}</td>
-                            <td>{{ $email->type }}</td>
+                            <td>{{ mb_convert_case($email->type , MB_CASE_TITLE, "UTF-8") }}</td>
                             <td>{{ $email->description }}</td>
                         </tr>
                     @endforeach
@@ -295,7 +301,7 @@
                         <tr>
                             <td>{{ $reference->nombres }}</td>
                             <td>{{ $reference->celular }}</td>
-                            <td>{{ $reference->parentesco }}</td>
+                            <td>{{ mb_convert_case($reference->parentesco , MB_CASE_TITLE, "UTF-8") }}</td>
                         </tr>
                     @endforeach
                 </tbody>

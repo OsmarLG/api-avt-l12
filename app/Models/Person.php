@@ -79,4 +79,11 @@ class Person extends Model
             get: fn() => trim("{$this->nombres} {$this->apellido_paterno} {$this->apellido_materno}"),
         );
     }
+
+    protected function edadCalculada(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->fecha_nacimiento?->age,
+        );
+    }
 }
