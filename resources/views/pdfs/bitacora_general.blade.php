@@ -193,6 +193,52 @@
         @endif
     @endforeach
 
+    @if($zonas_devoluciones->sum(fn ($z) => $z['detalles']->count()) > 0)
+        <div style="margin-top: 20px; text-align: center; font-weight: bold; font-size: 11pt; text-transform: uppercase;">Devoluciones</div>
+
+        @foreach($zonas_devoluciones as $z)
+            @if($z['detalles']->isNotEmpty())
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="8" class="zone-header">{{ $z['zona_nombre'] }}</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 30px;">#</th>
+                            <th style="width: 60px;">CONT</th>
+                            <th>CLIENTE</th>
+                            <th style="width: 110px;">C. C.</th>
+                            <th style="width: 45px;">MZA</th>
+                            <th style="width: 45px;">LOTE</th>
+                            <th style="width: 90px;">PAGOS</th>
+                            <th style="width: 90px;">IMPORTE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($z['detalles'] as $index => $d)
+                            <tr>
+                                <td class="text-center">{{ $index + 1 }}</td>
+                                <td class="text-center">{{ $d['folio'] }}</td>
+                                <td>{{ $d['cliente'] }}</td>
+                                <td class="text-center">{{ $d['clave_catastral'] }}</td>
+                                <td class="text-center">{{ $d['manzana'] }}</td>
+                                <td class="text-center">{{ $d['lote'] }}</td>
+                                <td class="text-center">{{ $d['pagos_display'] }}</td>
+                                <td class="text-right">$ {{ number_format($d['importe'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="subtotal-row">
+                            <td colspan="7" class="text-right">Subtotal:</td>
+                            <td class="text-right">$ {{ number_format($z['subtotal'], 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
+        @endforeach
+    @endif
+
     <div class="total-section">
         <div style="font-size: 8pt; margin-bottom: 5px;">TOTAL EN LETRA: {{ $total_letras }}</div>
         <div class="total-row">
@@ -206,6 +252,10 @@
         <div class="total-row">
             <div class="total-label">Total contado:</div>
             <div class="total-value">$ {{ number_format($total_contado, 2) }}</div>
+        </div>
+        <div class="total-row">
+            <div class="total-label">Total devoluciones:</div>
+            <div class="total-value">$ {{ number_format($total_devoluciones, 2) }}</div>
         </div>
         <div class="total-row" style="margin-top: 6px;">
             <div class="total-label">Total:</div>

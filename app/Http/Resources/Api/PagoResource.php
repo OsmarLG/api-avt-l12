@@ -30,6 +30,9 @@ class PagoResource extends JsonResource
             'fecha_pago_dueno' => $this->fecha_pago_dueno,
             'folio_dueno' => $this->folio_dueno,
             'reimpresion_ticket_dueno' => $this->reimpresion_ticket_dueno,
+            'devolucion' => $this->devolucion,
+            'fecha_devolucion' => optional($this->fecha_devolucion)->toISOString(),
+            'returned_by' => new UserResource($this->whenLoaded('returnedBy')),
         ];
     }
 }

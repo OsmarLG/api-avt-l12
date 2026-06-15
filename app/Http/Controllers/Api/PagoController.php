@@ -79,6 +79,20 @@ class PagoController extends Controller
     }
 
     /**
+     * Toggle the devolucion flag on a payment.
+     */
+    public function devolucion(Request $request, Pago $pago)
+    {
+        $request->validate(['comentario_devolucion' => 'required|string']);
+        $pago = $this->service->devolucion($pago, $request->comentario_devolucion, $request->user()->id);
+
+        return ApiResponse::ok(
+            new PagoResource($pago->fresh()->load('returnedBy')),
+            'Devolución actualizada correctamente'
+        );
+    }
+
+    /**
      * Filter payments without pagination.
      */
     public function pagosFilterWithoutPagination(Request $request)

@@ -29,6 +29,10 @@ class Pago extends Model
         'fecha_pago_dueno',
         'folio_dueno',
         'reimpresion_ticket_dueno',
+        'devolucion',
+        'fecha_devolucion',
+        'id_devolvio',
+        'comentario_devolucion',
         "created_at",
         "updated_at"
     ];
@@ -39,6 +43,8 @@ class Pago extends Model
         'cambio' => 'decimal:2',
         'fecha_pago' => 'date',
         'fecha_pago_dueno' => 'date',
+        'devolucion' => 'boolean',
+        'fecha_devolucion' => 'datetime',
     ];
 
     public function person(): BelongsTo
@@ -49,6 +55,11 @@ class Pago extends Model
     public function cancelledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'id_cancelo');
+    }
+
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'id_devolvio');
     }
 
     public function user(): BelongsTo

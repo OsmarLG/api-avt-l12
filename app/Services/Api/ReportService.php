@@ -24,61 +24,32 @@ class ReportService
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
-        // Obtener todos los abonos en el periodo
-        $abonos = Abono::with(['letra.venta.comprador', 'letra.venta.predio.zone'])
+        $abonos = Abono::with(['pago', 'letra.venta.comprador', 'letra.venta.predio.zone'])
             ->whereBetween('created_at', [$start, $end])
-            ->where("estado", "activo")
+            ->where('estado', 'activo')
+            ->orWhere('estado', 'devolucion')
             ->get();
 
-        // Agrupar por Zona
-        $zonasReport = Zone::all()->map(function ($zone) use ($abonos) {
-            $abonosZona = $abonos->filter(fn($a) => $a->letra->venta->predio->zona_id === $zone->id);
+        $abonosDevolucion = Abono::with(['pago', 'letra.venta.comprador', 'letra.venta.predio.zone'])
+            ->where('estado', 'devolucion')
+            ->whereHas('pago', function ($q) use ($start, $end) {
+                $q->where('estado', 'devolucion')
+                    ->whereBetween('fecha_devolucion', [$start, $end]);
+            })
+            ->get();
 
-            // Agrupar por Venta (Contrato) dentro de la zona
-            $detalles = $abonosZona->groupBy('letra.venta_id')->map(function ($abonosVenta) {
-                $venta = $abonosVenta->first()->letra->venta;
-                $predio = $venta->predio;
+        $abonosReporte = $abonos;
 
-                // Formatear pagos: "1, 2 | 24"
-                $letrasNumeros = $abonosVenta->map(function ($a) {
-                    if (strtoupper($a->letra->descripcion)  == "ANTICIPO") {
-                        return "ANT";
-                    } else {
-                        // Extraer número de "Letra 1/24"
-                        preg_match('/Letra\s+(\d+)\//', $a->letra->descripcion, $matches);
-                        return $matches[1] ?? $a->letra->consecutivo;
-                    }
-                })->sort()->unique()->implode(', ');
+        $zonasReport = $this->buildZonasReportFromAbonos($abonosReporte);
+        $zonasDevoluciones = $this->buildZonasReportFromAbonos($abonosDevolucion);
 
-                $totalLetras = 0;
-                if ($abonosVenta->first()->letra->descripcion) {
-                    preg_match('/\/(\d+)/', $abonosVenta->first()->letra->descripcion, $matches);
-                    $totalLetras = $matches[1] ?? 0;
-                }
+        $subtotalGeneral = $zonasReport->sum('subtotal');
+        $totalDevoluciones = $abonosDevolucion->sum('monto');
+        $totalGeneral = $subtotalGeneral - $totalDevoluciones;
 
-                return [
-                    'folio' => $venta->folio ?: $venta->id,
-                    'cliente' => $venta->comprador->full_name ?? ($venta->comprador->nombres . ' ' . $venta->comprador->apellido_paterno),
-                    'clave_catastral' => $predio->clave_catastral,
-                    'lote' => $predio->lote ?: $predio->gid,
-                    'manzana' => $predio->manzana,
-                    'pagos_display' => $letrasNumeros . ($totalLetras ? " | $totalLetras" : ""),
-                    'importe' => $abonosVenta->sum('monto'),
-                ];
-            })->values();
-
-            return [
-                'zona_nombre' => $zone->nombre,
-                'responsable' => $zone->dueno_nombre ?: 'Sin Responsable',
-                'detalles' => $detalles,
-                'subtotal' => $detalles->sum('importe'),
-            ];
-        });
-
-        $totalGeneral = $zonasReport->sum('subtotal');
-        $totalAbonado = $abonos->filter(fn ($a) => $a->letra->tipo === 'letra')->sum('monto');
-        $totalAnticipos = $abonos->filter(fn ($a) => $a->letra->tipo === 'anticipo')->sum('monto');
-        $totalContado = $abonos->filter(fn ($a) => $a->letra->tipo === 'contado')->sum('monto');
+        $totalAbonado = $abonosReporte->filter(fn ($a) => $a->letra->tipo === 'letra')->sum('monto');
+        $totalAnticipos = $abonosReporte->filter(fn ($a) => $a->letra->tipo === 'anticipo')->sum('monto');
+        $totalContado = $abonosReporte->filter(fn ($a) => $a->letra->tipo === 'contado')->sum('monto');
 
         $totalLetras = NumberToWords::convert($totalGeneral);
 
@@ -87,10 +58,12 @@ class ReportService
             'periodo' => $start->translatedFormat('d \d\e F') . ($start->isSameDay($end) ? '' : ' al ' . $end->translatedFormat('d \d\e F')) . ' de ' . $end->year,
             'fecha_reporte' => Carbon::now()->translatedFormat('l, d \d\e F \d\e Y'),
             'zonas' => $zonasReport,
+            'zonas_devoluciones' => $zonasDevoluciones,
             'total_general' => $totalGeneral,
             'total_abonado' => $totalAbonado,
             'total_anticipos' => $totalAnticipos,
             'total_contado' => $totalContado,
+            'total_devoluciones' => $totalDevoluciones,
             'total_letras' => $totalLetras,
         ]);
 
@@ -306,6 +279,55 @@ class ReportService
             $query->where('fecha_vencimiento', '>=', $periodStart)
                 ->where('fecha_vencimiento', '<=', $periodEnd);
         }
+    }
+
+    private function buildZonasReportFromAbonos($abonos)
+    {
+        return Zone::all()->map(function ($zone) use ($abonos) {
+            $abonosZona = $abonos->filter(fn ($a) => $a->letra->venta->predio->zona_id === $zone->id);
+            $detalles = $this->buildDetallesFromAbonos($abonosZona);
+
+            return [
+                'zona_nombre' => $zone->nombre,
+                'responsable' => $zone->dueno_nombre ?: 'Sin Responsable',
+                'detalles' => $detalles,
+                'subtotal' => $detalles->sum('importe'),
+            ];
+        });
+    }
+
+    private function buildDetallesFromAbonos($abonos)
+    {
+        return $abonos->groupBy('letra.venta_id')->map(function ($abonosVenta) {
+            $venta = $abonosVenta->first()->letra->venta;
+            $predio = $venta->predio;
+
+            $letrasNumeros = $abonosVenta->map(function ($a) {
+                if (strtoupper($a->letra->descripcion) == 'ANTICIPO') {
+                    return 'ANT';
+                }
+
+                preg_match('/Letra\s+(\d+)\//', $a->letra->descripcion, $matches);
+
+                return $matches[1] ?? $a->letra->consecutivo;
+            })->sort()->unique()->implode(', ');
+
+            $totalLetras = 0;
+            if ($abonosVenta->first()->letra->descripcion) {
+                preg_match('/\/(\d+)/', $abonosVenta->first()->letra->descripcion, $matches);
+                $totalLetras = $matches[1] ?? 0;
+            }
+
+            return [
+                'folio' => $venta->folio ?: $venta->id,
+                'cliente' => $venta->comprador->full_name ?? ($venta->comprador->nombres . ' ' . $venta->comprador->apellido_paterno),
+                'clave_catastral' => $predio->clave_catastral,
+                'lote' => $predio->lote ?: $predio->gid,
+                'manzana' => $predio->manzana,
+                'pagos_display' => $letrasNumeros . ($totalLetras ? " | $totalLetras" : ''),
+                'importe' => $abonosVenta->sum('monto'),
+            ];
+        })->values();
     }
 
     private function numeroLetraMoroso(Letra $letra): string

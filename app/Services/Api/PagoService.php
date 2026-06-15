@@ -100,7 +100,7 @@ class PagoService
 
     public function find(Pago $pago): Pago
     {
-        return $pago->load(['person', 'user', 'cancelledBy', 'abonos.letra', 'ticket']);
+        return $pago->load(['person', 'user', 'cancelledBy', 'abonos.letra', 'ticket', 'returnedBy']);
     }
 
     public function create(array $data, int $userId): Pago
@@ -326,5 +326,40 @@ class PagoService
         }
 
         $venta->save();
+    }
+
+    public function devolucion(Pago $pago, string $comment, int $userId): Pago
+    {
+        return DB::transaction(function () use ($pago, $comment, $userId) {
+            $pago->update([
+                'devolucion' => true,
+                'fecha_devolucion' => now(),
+                'id_devolvio' => $userId,
+                "comentario_devolucion" => $comment,
+                "estado" => 'devolucion',
+            ]);
+
+            $pago->abonos()->update([
+                'estado' => 'devolucion'
+            ]);
+            // Revert status of affected installments
+            $ventaIds = [];
+            foreach ($pago->abonos as $abono) {
+                $this->updateLetraStatus($abono->letra_id);
+                if ($abono->letra && $abono->letra->venta_id) {
+                    $ventaIds[] = $abono->letra->venta_id;
+                }
+            }
+
+            // Recalcular cache de las ventas afectadas por este pago
+            foreach (array_unique($ventaIds) as $ventaId) {
+                $venta = \App\Models\Venta::find($ventaId);
+                if ($venta) {
+                    $venta->calcularCache();
+                }
+            }
+
+            return $pago;
+        });
     }
 }
