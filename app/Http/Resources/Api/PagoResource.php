@@ -33,6 +33,7 @@ class PagoResource extends JsonResource
             'devolucion' => $this->devolucion,
             'fecha_devolucion' => optional($this->fecha_devolucion)->toISOString(),
             'returned_by' => new UserResource($this->whenLoaded('returnedBy')),
+            'comentario_devolucion' => $this->comentario_devolucion,
         ];
     }
 }

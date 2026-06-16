@@ -66,7 +66,7 @@ class PagoService
         if (!empty($filters['fecha_final'])) {
             $query->whereDate('created_at', '<=', $filters['fecha_final']);
         }
-        
+
         if (!empty($filters['estado'])) {
             $query->where('estado', $filters['estado']);
         }
@@ -122,7 +122,7 @@ class PagoService
                 'fecha_pago' => $data['fecha_pago'] ?? now(),
                 'user_id' => $userId,
                 'metodo_pago' => $data["metodo_pago"],
-                "created_at" =>$data['fecha_pago'] ?? now(),
+                "created_at" => $data['fecha_pago'] ?? now(),
             ]);
 
             // distribuir el monto entre letras pendientes
@@ -331,17 +331,32 @@ class PagoService
     public function devolucion(Pago $pago, string $comment, int $userId): Pago
     {
         return DB::transaction(function () use ($pago, $comment, $userId) {
-            $pago->update([
-                'devolucion' => true,
-                'fecha_devolucion' => now(),
-                'id_devolvio' => $userId,
-                "comentario_devolucion" => $comment,
-                "estado" => 'devolucion',
-            ]);
+            if ($pago->estado == 'devolucion') {
+                $pago->update([
+                    'devolucion' => false,
+                    'fecha_devolucion' => null,
+                    'id_devolvio' => null,
+                    "comentario_devolucion" => null,
+                    "estado" => 'activo',
+                ]);
+                $pago->abonos()->update([
+                    'estado' => 'activo'
+                ]);
+            } else {
+                $pago->update([
+                    'devolucion' => true,
+                    'fecha_devolucion' => now(),
+                    'id_devolvio' => $userId,
+                    "comentario_devolucion" => $comment,
+                    "estado" => 'devolucion',
+                ]);
 
-            $pago->abonos()->update([
-                'estado' => 'devolucion'
-            ]);
+                $pago->abonos()->update([
+                    'estado' => 'devolucion'
+                ]);
+            }
+
+
             // Revert status of affected installments
             $ventaIds = [];
             foreach ($pago->abonos as $abono) {
