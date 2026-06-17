@@ -7,6 +7,7 @@ use App\Models\Letra;
 use App\Models\LetraInteres;
 use App\Models\Pago;
 use App\Models\Venta;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -328,9 +329,9 @@ class PagoService
         $venta->save();
     }
 
-    public function devolucion(Pago $pago, string $comment, int $userId): Pago
+    public function devolucion(Pago $pago, string $comment, int $userId, ?string $fechaDevolucion = null): Pago
     {
-        return DB::transaction(function () use ($pago, $comment, $userId) {
+        return DB::transaction(function () use ($pago, $comment, $userId, $fechaDevolucion) {
             if ($pago->estado == 'devolucion') {
                 $pago->update([
                     'devolucion' => false,
@@ -345,7 +346,7 @@ class PagoService
             } else {
                 $pago->update([
                     'devolucion' => true,
-                    'fecha_devolucion' => now(),
+                    'fecha_devolucion' => Carbon::parse($fechaDevolucion ?? now()),
                     'id_devolvio' => $userId,
                     "comentario_devolucion" => $comment,
                     "estado" => 'devolucion',

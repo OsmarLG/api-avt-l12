@@ -83,8 +83,17 @@ class PagoController extends Controller
      */
     public function devolucion(Request $request, Pago $pago)
     {
-        $request->validate(['comentario_devolucion' => 'required|string']);
-        $pago = $this->service->devolucion($pago, $request->comentario_devolucion, $request->user()->id);
+        $validated = $request->validate([
+            'comentario_devolucion' => 'required|string',
+            'fecha_devolucion' => 'nullable|date',
+        ]);
+
+        $pago = $this->service->devolucion(
+            $pago,
+            $validated['comentario_devolucion'],
+            $request->user()->id,
+            $validated['fecha_devolucion'] ?? null
+        );
 
         return ApiResponse::ok(
             new PagoResource($pago->fresh()->load('returnedBy')),
