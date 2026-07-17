@@ -19,6 +19,7 @@ class IndexPredioRequest extends FormRequest
             'page' => ['nullable', 'integer', 'min:1'],
             'sort_by' => ['nullable', 'string', 'in:id,clave_catastral,created_at'],
             'sort_dir' => ['nullable', 'string', 'in:asc,desc'],
+            "lote" => "nullable"
         ];
     }
 }

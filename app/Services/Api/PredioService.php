@@ -38,7 +38,13 @@ class PredioService
                 ->orWhere('ubicacion', 'like', "%{$search}%");
         }
 
-        return $query->paginate($filters['per_page'] ?? 15);
+        if (!empty($filters['lote']) && isset($filters['lote'])) {
+            $query->where('lote', $filters['lote']);
+        }
+
+        $query->orderBy("id", "desc");
+
+        return $query->paginate($filters['per_page'] ?? 10);
     }
 
     public function find(Predio $predio): Predio
@@ -261,7 +267,7 @@ class PredioService
                 ->orWhere('propietario', 'like', "%{$search}%")
                 ->orWhere('ubicacion', 'like', "%{$search}%");
         }
-        
+
         return $query->get();
     }
 }
