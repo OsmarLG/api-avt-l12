@@ -782,6 +782,31 @@ test('no se puede aplicar un lote ya aplicado', function () {
         ->assertSessionHasErrors('aplicar');
 });
 
+test('se puede descartar una previsualización aunque ya no esté el archivo', function () {
+    // El boton de descartar vivia dentro de la rama sin error, asi que un lote cuyo
+    // archivo se perdio quedaba atorado en la lista sin forma de quitarlo.
+    Storage::fake('local');
+    $this->actingAs($this->usuario);
+
+    $lote = ImportBatch::create([
+        'tipo' => 'padron',
+        'estado' => ImportBatch::ESTADO_PREVISUALIZADO,
+        'archivo_nombre' => 'padron.xlsx',
+        'archivo_hash' => str_repeat('a', 64),
+        'user_id' => $this->usuario->id,
+    ]);
+
+    $this->get(route('imports.padron.show', $lote))
+        ->assertOk()
+        ->assertSee('Ya no está el archivo original')
+        ->assertSee('Descartar previsualización');
+
+    $this->delete(route('imports.padron.destroy', $lote))
+        ->assertRedirect(route('imports.padron.index'));
+
+    expect(ImportBatch::count())->toBe(0);
+});
+
 test('se puede descartar una previsualización', function () {
     Storage::fake('local');
     $this->actingAs($this->usuario);

@@ -82,7 +82,7 @@
         }
 
         .rejilla { display: grid; gap: 14px; }
-        .rejilla.dos { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .rejilla.dos { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 
         label.campo { display: block; margin-bottom: 14px; }
         label.campo > span { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; }
@@ -160,6 +160,18 @@
         tbody tr:hover td { background: var(--acento-suave); }
         td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
         td.envuelve { white-space: normal; min-width: 260px; }
+
+        /* Las tablas de resumen viven dentro de tarjetas angostas: la etiqueta puede
+           partirse en dos renglones, pero el importe nunca —y se pega a la derecha
+           para que no se salga del recuadro. */
+        .panel table { table-layout: auto; }
+        .panel table td, .panel table th { white-space: normal; }
+        .panel table td:last-child, .panel table th:last-child {
+            white-space: nowrap;
+            text-align: right;
+            width: 1%;
+            font-variant-numeric: tabular-nums;
+        }
 
         .etiqueta {
             display: inline-block;

@@ -37,7 +37,18 @@
                             <td class="num">{{ number_format($lote->registros()->count()) }}</td>
                             <td>{{ $lote->user?->name ?? '—' }}</td>
                             <td class="mini">{{ $lote->created_at->format('d/m/Y H:i') }}</td>
-                            <td><a href="{{ route('imports.padron.show', $lote) }}">Ver</a></td>
+                            <td>
+                                <a href="{{ route('imports.padron.show', $lote) }}">Ver</a>
+                                @if ($lote->estado === \App\Models\ImportBatch::ESTADO_PREVISUALIZADO)
+                                    <form method="post" action="{{ route('imports.padron.destroy', $lote) }}"
+                                          onsubmit="return confirm('¿Descartar esta previsualización?')"
+                                          style="display:inline;margin-left:10px">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="neutro" style="padding:3px 9px;font-size:12px">Descartar</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

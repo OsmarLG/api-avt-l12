@@ -219,13 +219,6 @@
             </div>
         </form>
 
-        <form method="post" action="{{ route('imports.padron.destroy', $lote) }}"
-              onsubmit="return confirm('¿Descartar esta previsualización?')">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="neutro">Descartar previsualización</button>
-        </form>
-
         <script>
             document.getElementById('solo-problemas').addEventListener('change', function (evento) {
                 const soloProblemas = evento.target.checked;
@@ -235,4 +228,14 @@
             });
         </script>
     @endif
+
+    {{-- Fuera del @else a propósito: si el archivo ya no está, descartar el lote es
+         justo lo único que queda por hacer con él. --}}
+    <form method="post" action="{{ route('imports.padron.destroy', $lote) }}"
+          onsubmit="return confirm('¿Descartar esta previsualización?')"
+          style="margin-top:18px">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="neutro">Descartar previsualización</button>
+    </form>
 @endsection
