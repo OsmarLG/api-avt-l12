@@ -8,6 +8,7 @@ use App\Models\ImportBatch;
 use App\Models\ImportBatchRecord;
 use App\Models\User;
 use App\Models\Zone;
+use App\Services\Imports\GeoJsonFeatureFinder;
 use App\Services\Imports\PadronImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,11 +39,15 @@ class PadronImportController extends Controller
     /** Formulario de carga. */
     public function create(): View
     {
+        $opciones = $this->service->opcionesPorDefecto();
+
         return view('imports.padron.create', [
-            'opciones' => $this->service->opcionesPorDefecto(),
+            'opciones' => $opciones,
             'zonas' => Zone::orderBy('nombre')->get(),
             'usuarios' => User::orderBy('name')->get(['id', 'name', 'email']),
-            'geojsonExiste' => is_readable(database_path('seeders/CATASTRO.geojson')),
+            // Vía el buscador, no con is_readable: en el repositorio el catastro viaja
+            // comprimido y sólo existe el .gz junto a esta ruta.
+            'geojsonExiste' => (new GeoJsonFeatureFinder($opciones['geojson_path']))->existe(),
         ]);
     }
 

@@ -705,6 +705,15 @@ test('la carga deja el lote en previsualización sin escribir nada', function ()
     Storage::disk('local')->assertExists('imports/'.$lote->uuid.'.xlsx');
 });
 
+test('el formulario no avisa de un catastro faltante cuando sólo está el .gz', function () {
+    // El repositorio trae CATASTRO.geojson.gz, no el .geojson: comprobar con
+    // is_readable sobre la ruta sin comprimir daba un aviso falso.
+    $this->actingAs($this->usuario)
+        ->get('/importador/padron')
+        ->assertOk()
+        ->assertDontSee('No encuentro el GeoJSON');
+});
+
 test('rechaza un archivo que no es hoja de cálculo', function () {
     $this->actingAs($this->usuario)
         ->post('/importador/padron/previsualizar', [
