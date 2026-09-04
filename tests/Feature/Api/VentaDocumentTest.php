@@ -6,7 +6,11 @@ use App\Models\Predio;
 use App\Models\User;
 use App\Models\Letra;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+
+// Sin esto la prueba escribe de verdad en la base de pruebas y contamina a las demás.
+uses(RefreshDatabase::class);
 
 it('generates a contract automatically when a venta is created', function () {
     Storage::fake('public');

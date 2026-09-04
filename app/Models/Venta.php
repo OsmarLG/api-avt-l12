@@ -22,6 +22,7 @@ class Venta extends Model
         'aval_id',
         'predio_id',
         'estado',
+        'estatus_legal',
         'user_id',
         'metodo_pago',
         'costo_lote',
