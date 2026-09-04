@@ -291,7 +291,23 @@ class PadronImportService
 
         $fila['nombre_partido'] = $this->separarNombre($comprador);
         $fila['estado_financiero'] = $fila['saldo'] > self::TOLERANCIA_IMPORTE ? 'pagando' : 'pagado';
-        $fila['letras_a_generar'] = 1 + $fila['mensualidades']; // anticipo + mensualidades
+
+        // Si el anticipo cubre el costo completo no hay nada que financiar: es venta de
+        // contado. El padrón a veces igual anota mensualidades con pagaré en cero, y
+        // generarlas dejaría letras vencidas de $0.00 apareciendo en el reporte de morosos.
+        $fila['es_contado'] = $fila['cantidad_total'] > 0
+            && ($fila['cantidad_total'] - $fila['anticipo']) <= self::TOLERANCIA_IMPORTE;
+
+        $fila['letras_a_generar'] = $fila['es_contado'] ? 1 : 1 + $fila['mensualidades'];
+
+        if ($fila['es_contado'] && $fila['mensualidades'] > 0) {
+            $fila['avisos'][] = sprintf(
+                'Venta de contado: el anticipo cubre el total. Se crea una sola letra tipo «contado» '
+                    .'en lugar de %d mensualidades de $0.00.',
+                $fila['mensualidades']
+            );
+        }
+
         $fila['acciones'] = [
             'predio' => 'crear',
             'persona' => 'crear',
@@ -341,7 +357,8 @@ class PadronImportService
 
         // El saldo real será la suma de las letras pendientes, no el número del Excel:
         // el pagaré trae decimales periódicos y las letras se guardan en centavos.
-        $montos = $this->montosMensualidades(
+        // En una venta de contado no hay mensualidades, así que el saldo es cero por definición.
+        $montos = $fila['es_contado'] ? [] : $this->montosMensualidades(
             $fila['cantidad_total'],
             $fila['anticipo'],
             $fila['pagare'],
@@ -952,11 +969,11 @@ class PadronImportService
             'person_id' => $persona->id,
             'predio_id' => $predio->id,
             'user_id' => $opciones['user_id'],
-            'metodo_pago' => 'meses',
+            'metodo_pago' => $fila['es_contado'] ? 'contado' : 'meses',
             'costo_lote' => $fila['cantidad_total'],
             'enganche' => $fila['anticipo'],
-            'meses_a_pagar' => $fila['mensualidades'],
-            'fecha_primer_abono' => $contratacion->addMonth()->toDateString(),
+            'meses_a_pagar' => $fila['es_contado'] ? null : $fila['mensualidades'],
+            'fecha_primer_abono' => $fila['es_contado'] ? null : $contratacion->addMonth()->toDateString(),
             'saldo_venta' => $fila['saldo'],
             'estado' => $fila['estado_financiero'],
             'estatus_legal' => $fila['estatus_legal'],
@@ -974,58 +991,90 @@ class PadronImportService
      * pagadas; el resto pendientes. No se generan pagos ni tickets: el Excel no trae
      * las fechas reales de pago e inventarlas ensuciaría el historial de caja.
      *
+     * Las letras se insertan de golpe, no una por una: contra una base remota cada
+     * INSERT cuesta un viaje de red completo, y un padrón de 162 ventas son ~4,400
+     * letras. En bloque, cada venta cuesta una escritura en lugar de treinta.
+     *
      * @param  array<string, mixed>  $fila
      */
     private function crearLetras(Venta $venta, array $fila, ImportBatch $batch): int
     {
         $contratacion = CarbonImmutable::parse($fila['fecha_contratacion']);
-        $mensualidades = $fila['mensualidades'];
-        $pagadas = $fila['letras_pagadas'];
-        $creadas = 0;
+        $ahora = now();
 
-        // El anticipo se considera cubierto salvo que lo pagado no alcance a cubrirlo.
-        $saldoAnticipo = round(max(0.0, $fila['anticipo'] - min($fila['cantidad_pagada'], $fila['anticipo'])), 2);
+        $base = [
+            'venta_id' => $venta->id,
+            'created_at' => $ahora,
+            'updated_at' => $ahora,
+        ];
 
-        $anticipo = $venta->letras()->create([
-            'descripcion' => 'Anticipo',
-            'monto' => $fila['anticipo'],
-            'saldo' => $saldoAnticipo,
-            'consecutivo' => 0,
-            'tipo' => 'anticipo',
-            'estado' => $saldoAnticipo <= self::TOLERANCIA_IMPORTE ? 'pagado' : 'pendiente',
-            'fecha_vencimiento' => $contratacion->toDateString(),
-        ]);
+        // Contado: una sola letra por el costo completo, con el tipo que los reportes
+        // ya reconocen (ReportService suma los abonos de las letras tipo «contado»).
+        if ($fila['es_contado']) {
+            $renglones = [$base + [
+                'descripcion' => 'Contado',
+                'monto' => $fila['cantidad_total'],
+                'saldo' => 0,
+                'consecutivo' => 0,
+                'tipo' => 'contado',
+                'estado' => 'pagado',
+                'fecha_vencimiento' => $contratacion->toDateString(),
+            ]];
+        } else {
+            // El anticipo se considera cubierto salvo que lo pagado no alcance a cubrirlo.
+            $saldoAnticipo = round(max(0.0, $fila['anticipo'] - min($fila['cantidad_pagada'], $fila['anticipo'])), 2);
 
-        $this->registrar($batch, $anticipo, ImportBatchRecord::ACCION_CREADO, $fila['fila'], $venta->folio.' / Anticipo');
-        $creadas++;
+            $renglones = [$base + [
+                'descripcion' => 'Anticipo',
+                'monto' => $fila['anticipo'],
+                'saldo' => $saldoAnticipo,
+                'consecutivo' => 0,
+                'tipo' => 'anticipo',
+                'estado' => $saldoAnticipo <= self::TOLERANCIA_IMPORTE ? 'pagado' : 'pendiente',
+                'fecha_vencimiento' => $contratacion->toDateString(),
+            ]];
 
-        $montos = $this->montosMensualidades(
-            $fila['cantidad_total'],
-            $fila['anticipo'],
-            $fila['pagare'],
-            $mensualidades
-        );
+            $montos = $this->montosMensualidades(
+                $fila['cantidad_total'],
+                $fila['anticipo'],
+                $fila['pagare'],
+                $fila['mensualidades']
+            );
 
-        foreach ($montos as $i => $monto) {
-            $pagada = $i < $pagadas;
+            foreach ($montos as $i => $monto) {
+                $pagada = $i < $fila['letras_pagadas'];
 
-            $letra = $venta->letras()->create([
-                'descripcion' => 'Letra '.($i + 1),
-                'monto' => $monto,
-                'saldo' => $pagada ? 0 : $monto,
-                'consecutivo' => $i + 1,
-                'tipo' => 'letra',
-                'estado' => $pagada ? 'pagado' : 'pendiente',
-                'fecha_vencimiento' => $contratacion->addMonths($i + 1)->toDateString(),
-            ]);
+                $renglones[] = $base + [
+                    'descripcion' => 'Letra '.($i + 1),
+                    'monto' => $monto,
+                    'saldo' => $pagada ? 0 : $monto,
+                    'consecutivo' => $i + 1,
+                    'tipo' => 'letra',
+                    'estado' => $pagada ? 'pagado' : 'pendiente',
+                    'fecha_vencimiento' => $contratacion->addMonths($i + 1)->toDateString(),
+                ];
+            }
+        }
 
-            $this->registrar($batch, $letra, ImportBatchRecord::ACCION_CREADO, $fila['fila'], $venta->folio.' / '.$letra->descripcion);
-            $creadas++;
+        Letra::insert($renglones);
+
+        // insert() no devuelve ids, así que se releen para la bitácora: sigue siendo
+        // una consulta por venta en lugar de una por letra.
+        $letras = $venta->letras()->orderBy('consecutivo')->orderBy('id')->get(['id', 'descripcion']);
+
+        foreach ($letras as $letra) {
+            $this->registrar(
+                $batch,
+                $letra,
+                ImportBatchRecord::ACCION_CREADO,
+                $fila['fila'],
+                $venta->folio.' / '.$letra->descripcion
+            );
         }
 
         $venta->calcularCache();
 
-        return $creadas;
+        return count($renglones);
     }
 
     // ----------------------------------------------------------------- rollback

@@ -27,7 +27,21 @@ class GeoJsonFeatureFinder
 
     public function existe(): bool
     {
-        return is_readable($this->path);
+        return $this->rutaReal() !== null;
+    }
+
+    /**
+     * El catastro sin comprimir pesa ~150 MB y GitHub rechaza cualquier archivo de más
+     * de 100 MB, así que en el repositorio viaja como .gz (~22 MB). Se acepta cualquiera
+     * de las dos: si la ruta configurada no está, se busca la versión comprimida.
+     */
+    private function rutaReal(): ?string
+    {
+        if (is_readable($this->path)) {
+            return $this->path;
+        }
+
+        return is_readable($this->path.'.gz') ? $this->path.'.gz' : null;
     }
 
     /**
@@ -61,17 +75,20 @@ class GeoJsonFeatureFinder
         $pendientes = count($buscadas);
         $encontradas = [];
 
-        $handle = fopen($this->path, 'rb');
+        // gzopen sirve para ambos: descomprime al vuelo si el archivo es .gz y lo lee
+        // tal cual si no lo es, así que no hace falta ramificar el recorrido.
+        $ruta = $this->rutaReal();
+        $handle = gzopen($ruta, 'rb');
 
         if ($handle === false) {
-            throw new RuntimeException("No se pudo abrir el GeoJSON: {$this->path}");
+            throw new RuntimeException("No se pudo abrir el GeoJSON: {$ruta}");
         }
 
         $buffer = '';
         $dentroDeFeatures = false;
 
         try {
-            while (($linea = fgets($handle)) !== false) {
+            while (($linea = gzgets($handle)) !== false) {
                 // La cabecera del FeatureCollection ("type", "name", "crs") también trae
                 // llaves, así que no se empieza a acumular hasta abrir el arreglo de features.
                 if (! $dentroDeFeatures) {
@@ -145,7 +162,7 @@ class GeoJsonFeatureFinder
                 }
             }
         } finally {
-            fclose($handle);
+            gzclose($handle);
         }
 
         return $encontradas;

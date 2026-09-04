@@ -72,6 +72,11 @@ function filasPadronDePrueba(): array
         // Clave válida pero fuera del catastro: se importa sin polígono.
         ['PAGADO', '201', '8', 'B', '2006-04-01', 'JUAN PEREZ LOPEZ', '612-666-6666', 190,
             10, 20000, 2000, 10, 1800, 0, 20000, '103-012-999-008'],
+
+        // De contado: el anticipo cubre el costo completo y el pagare va en cero,
+        // pero el padron igual anota mensualidades.
+        ['PAGADO', '202', '9', 'B', '2006-05-01', 'ROSA MARIA CONTADO LOPEZ', '612-777-7777', 200,
+            1, 25000, 25000, 1, 0, 0, 25000, '103-012-126-009'],
     ];
 }
 
@@ -141,6 +146,7 @@ beforeEach(function () {
     $this->geojson = escribirGeoJson($this->temp.'/catastro.geojson', [
         '103-012-124-001', '103-012-124-002', '103-012-124-003',
         '103-012-123-004', '103-012-121-020', '103-012-122-004', '103-012-125-007',
+        '103-012-126-009',
     ]);
 
     $this->usuario = User::create([
@@ -215,6 +221,20 @@ test('no se atora con una llave suelta dentro de un texto', function () {
         ->and($encontradas['103012124001']['properties']['ubicacion'])->toBe('ARROYO DE LOS POTRILLOS }');
 });
 
+test('lee el catastro comprimido cuando sólo existe el .gz', function () {
+    // En el repositorio el catastro viaja comprimido: 150 MB no pasan el límite de GitHub.
+    $ruta = $this->temp.'/solo-comprimido.geojson';
+    File::put($ruta.'.gz', gzencode(File::get($this->geojson)));
+
+    expect(File::exists($ruta))->toBeFalse();
+
+    // La ruta se pide sin extensión: el buscador encuentra el .gz solo.
+    $encontradas = (new GeoJsonFeatureFinder($ruta))->buscar(['103012124001', '103012124002']);
+
+    expect($encontradas)->toHaveCount(2)
+        ->and((float) $encontradas['103012124001']['properties']['sup_terr'])->toBe(400.0);
+});
+
 test('arma un feature partido en varias líneas', function () {
     $ruta = $this->temp.'/multilinea.geojson';
 
@@ -252,15 +272,15 @@ test('el análisis cuenta bien qué se crearía', function () {
     $a = $this->servicio->analizar($this->xlsx, $this->opciones);
 
     expect($a['bloqueos'])->toBe([])
-        ->and($a['resumen']['filas_totales'])->toBe(8)
-        ->and($a['resumen']['filas_con_venta'])->toBe(7)
+        ->and($a['resumen']['filas_totales'])->toBe(9)
+        ->and($a['resumen']['filas_con_venta'])->toBe(8)
         ->and($a['resumen']['filas_solo_predio'])->toBe(1)
-        ->and($a['resumen']['predios_a_crear'])->toBe(8)
-        // 7 compradores, pero uno se repite en dos filas.
-        ->and($a['resumen']['personas_a_crear'])->toBe(6)
-        ->and($a['resumen']['ventas_a_crear'])->toBe(7)
-        // 7 anticipos + 30+30+36+24+24+12+10 mensualidades
-        ->and($a['resumen']['letras_a_crear'])->toBe(7 + 166)
+        ->and($a['resumen']['predios_a_crear'])->toBe(9)
+        // 8 compradores, pero uno se repite en dos filas.
+        ->and($a['resumen']['personas_a_crear'])->toBe(7)
+        ->and($a['resumen']['ventas_a_crear'])->toBe(8)
+        // 7 anticipos + 30+30+36+24+24+12+10 mensualidades + 1 letra de contado
+        ->and($a['resumen']['letras_a_crear'])->toBe(7 + 166 + 1)
         ->and($a['zona']['accion'])->toBe(ImportBatchRecord::ACCION_CREADO);
 });
 
@@ -378,6 +398,17 @@ test('el análisis anticipa el saldo real, no el del Excel', function () {
         ->and($atrasada['saldo'])->not->toBe($atrasada['saldo_calculado']);
 });
 
+test('reconoce la venta de contado cuando el anticipo cubre el total', function () {
+    $a = $this->servicio->analizar($this->xlsx, $this->opciones);
+    $contado = collect($a['filas'])->firstWhere('folio', 'VD1-202');
+
+    expect($contado['es_contado'])->toBeTrue()
+        // Una sola letra, no 1 anticipo + 1 mensualidad de $0.
+        ->and($contado['letras_a_generar'])->toBe(1)
+        ->and($contado['saldo_calculado'])->toBe(0.0)
+        ->and(implode(' ', $contado['avisos']))->toContain('contado');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Aplicación
@@ -389,11 +420,11 @@ test('aplica el padrón completo', function () {
 
     expect($lote->estado)->toBe(ImportBatch::ESTADO_APLICADO)
         ->and(Zone::where('nombre', 'Valle Dorado 1ra etapa')->exists())->toBeTrue()
-        ->and(Predio::count())->toBe(8)
-        ->and(Person::count())->toBe(6)
-        ->and(Venta::count())->toBe(7)
-        ->and(Letra::count())->toBe(7 + 166)
-        ->and(PredioObservacion::count())->toBe(8);
+        ->and(Predio::count())->toBe(9)
+        ->and(Person::count())->toBe(7)
+        ->and(Venta::count())->toBe(8)
+        ->and(Letra::count())->toBe(7 + 166 + 1)
+        ->and(PredioObservacion::count())->toBe(9);
 
     $venta = Venta::where('folio', 'VD1-5')->firstOrFail();
 
@@ -416,6 +447,34 @@ test('la venta atrasada conserva sus letras pendientes', function () {
         ->and($venta->letras()->where('estado', 'pendiente')->count())->toBe(33)
         ->and((float) $venta->saldo_venta)->toBe(91666.66)
         ->and($venta->proxima_letra_id)->not->toBeNull();
+});
+
+test('la venta de contado se guarda con una sola letra pagada', function () {
+    $this->servicio->aplicar($this->xlsx, 'padron.xlsx', $this->opciones, $this->usuario->id);
+
+    $venta = Venta::where('folio', 'VD1-202')->firstOrFail();
+
+    expect($venta->metodo_pago)->toBe('contado')
+        ->and($venta->meses_a_pagar)->toBeNull()
+        ->and($venta->fecha_primer_abono)->toBeNull()
+        ->and($venta->estado)->toBe('pagado')
+        ->and((float) $venta->saldo_venta)->toBe(0.0)
+        ->and($venta->letras()->count())->toBe(1);
+
+    $letra = $venta->letras()->firstOrFail();
+
+    // El tipo importa: ReportService suma los abonos de las letras «contado».
+    expect($letra->tipo)->toBe('contado')
+        ->and($letra->estado)->toBe('pagado')
+        ->and((float) $letra->monto)->toBe(25000.0)
+        ->and((float) $letra->saldo)->toBe(0.0);
+});
+
+test('no deja letras pendientes de cero pesos en ningún lado', function () {
+    // Eran las que ensuciaban el reporte de morosos con importes en cero.
+    $this->servicio->aplicar($this->xlsx, 'padron.xlsx', $this->opciones, $this->usuario->id);
+
+    expect(Letra::where('estado', 'pendiente')->where('monto', 0)->count())->toBe(0);
 });
 
 test('no genera pagos ni tickets del histórico', function () {
@@ -468,11 +527,11 @@ test('deja bitácora de cada registro que creó', function () {
 
     expect($lote->conteoCreados())->toMatchArray([
         'Zone' => 1,
-        'Predio' => 8,
-        'PredioObservacion' => 8,
-        'Person' => 6,
-        'Venta' => 7,
-        'Letra' => 173,
+        'Predio' => 9,
+        'PredioObservacion' => 9,
+        'Person' => 7,
+        'Venta' => 8,
+        'Letra' => 174,
     ]);
 
     $registroVenta = $lote->registros()
@@ -533,7 +592,7 @@ test('revertir deja la base como estaba', function () {
     $lote = $this->servicio->aplicar($this->xlsx, 'padron.xlsx', $this->opciones, $this->usuario->id);
     $borrados = $this->servicio->revertir($lote, $this->usuario->id);
 
-    expect($borrados)->toMatchArray(['Venta' => 7, 'Letra' => 173, 'Person' => 6, 'Predio' => 8, 'Zone' => 1])
+    expect($borrados)->toMatchArray(['Venta' => 8, 'Letra' => 174, 'Person' => 7, 'Predio' => 9, 'Zone' => 1])
         ->and($lote->fresh()->estado)->toBe(ImportBatch::ESTADO_REVERTIDO)
         ->and([
             'zones' => Zone::count(), 'predios' => Predio::count(), 'people' => Person::count(),
@@ -639,7 +698,7 @@ test('la carga deja el lote en previsualización sin escribir nada', function ()
     $respuesta->assertRedirect(route('imports.padron.show', $lote));
 
     expect($lote->estado)->toBe(ImportBatch::ESTADO_PREVISUALIZADO)
-        ->and($lote->resumen['ventas_a_crear'])->toBe(7)
+        ->and($lote->resumen['ventas_a_crear'])->toBe(8)
         ->and(Predio::count())->toBe(0)
         ->and(Venta::count())->toBe(0);
 
@@ -690,8 +749,8 @@ test('el flujo completo por la web: previsualizar, aplicar y revertir', function
         ->assertSessionHas('exito');
 
     expect($lote->fresh()->estado)->toBe(ImportBatch::ESTADO_APLICADO)
-        ->and(Venta::count())->toBe(7)
-        ->and(Letra::count())->toBe(173);
+        ->and(Venta::count())->toBe(8)
+        ->and(Letra::count())->toBe(174);
 
     $this->get(route('imports.padron.show', $lote))->assertOk()->assertSee('Importación aplicada');
     $this->get(route('imports.padron.registros', $lote))->assertOk()->assertDownload();

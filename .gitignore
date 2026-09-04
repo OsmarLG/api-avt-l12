@@ -20,6 +20,7 @@
 /storage/pail
 /vendor
 /database/seeders/CATASTRO.geojson
+!/database/seeders/CATASTRO.geojson.gz
 Homestead.json
 Homestead.yaml
 Thumbs.db
