@@ -56,7 +56,9 @@ class Predio extends Model
 
     public function ventaActiva()
     {
-        return $this->hasOne(Venta::class)->where('estado', 'pagando');
+        return $this->hasOne(Venta::class)
+            ->where('estado', '!=', 'cancelado')
+            ->latestOfMany();
     }
 
     public function observaciones(): HasMany

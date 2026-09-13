@@ -39,6 +39,34 @@ class VentaService
             });
         }
 
+        if (! empty($filters['clave_catastral'])) {
+            $query->whereHas('predio', function ($q) use ($filters) {
+                $q->where('clave_catastral', 'like', $filters['clave_catastral'] . '%');
+            });
+        }
+
+        if (! empty($filters['lote'])) {
+            $query->whereHas('predio', function ($q) use ($filters) {
+                $q->where('lote', $filters['lote']);
+            });
+        }
+
+        if (! empty($filters['manzana'])) {
+            $query->whereHas('predio', function ($q) use ($filters) {
+                $q->where('manzana', $filters['manzana']);
+            });
+        }
+
+        if (! empty($filters['zona_id'])) {
+            $query->whereHas('predio', function ($q) use ($filters) {
+                $q->where('zona_id', $filters['zona_id']);
+            });
+        }
+
+        if (! empty($filters['folio_contrato'])) {
+            $query->where('folio', 'like', $filters['folio_contrato'] . '%');
+        }
+
         $sortBy = $filters['sort_by'] ?? 'id';
         $sortDir = $filters['sort_dir'] ?? 'desc';
 

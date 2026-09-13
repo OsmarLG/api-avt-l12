@@ -16,6 +16,7 @@ class ZoneResource extends JsonResource
             'id' => $this->id,
             'nombre' => $this->nombre,
             'dueno_nombre' => $this->dueno_nombre,
+            'ubicacion' => $this->ubicacion,
             'predios' => PredioResource::collection($this->whenLoaded('predios')),
         ];
     }

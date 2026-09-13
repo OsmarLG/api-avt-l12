@@ -259,7 +259,7 @@ class PredioService
 
     public function indexWithoutPagination(array $filters)
     {
-        $query = Predio::query()->with('zone');
+        $query = Predio::query()->with('zone')->with("ventaActiva");
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
