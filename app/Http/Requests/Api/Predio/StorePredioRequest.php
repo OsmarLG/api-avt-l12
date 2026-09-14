@@ -14,7 +14,7 @@ class StorePredioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'clave_catastral' => ['required', 'string', 'max:255', 'unique:predios,clave_catastral'],
+            'clave_catastral' => ['nullable', 'string', 'max:255', 'unique:predios,clave_catastral'],
             'propietario' => ['nullable', 'string', 'max:255'],
             'ubicacion' => ['nullable', 'string', 'max:255'],
             'sup_cons' => ['nullable', 'numeric'],

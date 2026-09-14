@@ -17,7 +17,7 @@ class UpdatePredioRequest extends FormRequest
 
         return [
             'clave_catastral' => [
-                'sometimes',
+                'nullable',
                 'string',
                 'max:255',
                 'unique:predios,clave_catastral,' . $predioId,
