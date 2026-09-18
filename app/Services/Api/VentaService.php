@@ -157,6 +157,25 @@ class VentaService
         });
     }
 
+    public function escriturarVenta(Venta $venta, ?string $fechaEscrituracion = null): Venta
+    {
+        return DB::transaction(function () use ($venta, $fechaEscrituracion) {
+            $fecha = Carbon::parse($fechaEscrituracion ?? now());
+
+            $venta->update([
+                'fecha_escrituracion' => $fecha,
+                'estatus_legal' => 'escriturado',
+            ]);
+
+            PredioObservacion::create([
+                'predio_id' => $venta->predio_id,
+                'observacion' => 'Predio escriturado el día ' . $fecha->format('d/m/Y'),
+            ]);
+
+            return $venta->load(['comprador', 'aval', 'predio', 'user', 'cancelledBy', 'files']);
+        });
+    }
+
     public function cambiarComprador(Venta $venta, ?int $compradorId, ?int $avalId): Venta
     {
         return DB::transaction(function () use ($venta, $compradorId, $avalId) {

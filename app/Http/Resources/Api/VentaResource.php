@@ -31,6 +31,7 @@ class VentaResource extends JsonResource
             "intereses_activo" => $this->intereses_activo,
             "intereses_porcentaje" => $this->intereses_porcentaje,
             "estatus_legal" => $this->estatus_legal,
+            "fecha_escrituracion" => optional($this->fecha_escrituracion)->format('Y-m-d'),
             "intereses_dias_tregua" => $this->intereses_dias_tregua,
             "proxima_letra_id" => $this->proxima_letra_id,
             "proxima_letra" => new LetraResource($this->whenLoaded('proximaLetra')),

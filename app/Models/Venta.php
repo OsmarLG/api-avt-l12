@@ -23,6 +23,7 @@ class Venta extends Model
         'predio_id',
         'estado',
         'estatus_legal',
+        'fecha_escrituracion',
         'user_id',
         'metodo_pago',
         'costo_lote',
@@ -44,6 +45,7 @@ class Venta extends Model
         'costo_lote' => 'decimal:2',
         'enganche' => 'decimal:2',
         'fecha_primer_abono' => 'date',
+        'fecha_escrituracion' => 'date',
         'meses_a_pagar' => 'integer',
     ];
 

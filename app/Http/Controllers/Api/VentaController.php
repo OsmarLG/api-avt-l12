@@ -98,6 +98,25 @@ class VentaController extends Controller
     }
 
     /**
+     * Marca una venta como escriturada.
+     */
+    public function escriturar(Request $request)
+    {
+        $validated = $request->validate([
+            'venta_id' => ['required', 'exists:ventas,id'],
+            'fecha_escrituracion' => ['nullable', 'date'],
+        ]);
+
+        $venta = Venta::findOrFail($validated['venta_id']);
+        $venta = $this->service->escriturarVenta($venta, $validated['fecha_escrituracion'] ?? null);
+
+        return ApiResponse::ok(
+            new VentaResource($venta),
+            'Venta escriturada correctamente'
+        );
+    }
+
+    /**
      * Cancel a sale.
      *
      * Marks a sale as cancelled and records the user and reason for cancellation.
